@@ -1,0 +1,113 @@
+/* ============================================================
+   dacum-typography.css
+   Readability & visual hierarchy enhancements ONLY.
+   No layout, no structure, no positioning changes.
+   ============================================================ */
+
+/* ══════════════════════════════════════════════════════════
+   1. DUTY & TASK CARD — bolder input text
+   Target: card view textareas inside .dcv-duty-card / .dcv-task-card
+   ══════════════════════════════════════════════════════════ */
+
+/* Duty textarea — stronger weight for readability */
+.dcv-duty-input {
+  font-weight: 700 !important;
+  font-size: 0.92em !important;
+  color: #1e3a8a !important;       /* slightly deeper blue, was slightly transparent */
+  letter-spacing: 0.01em;
+}
+
+/* Task textarea — medium-bold, distinct from duty */
+.dcv-task-input {
+  font-weight: 600 !important;
+  font-size: 0.88em !important;
+  color: #6b3600 !important;       /* deeper amber-brown for contrast */
+}
+
+/* Table view duty title input */
+.duty-row > input[data-duty-id] {
+  font-weight: 700 !important;
+  font-size: 1em !important;
+}
+
+/* Table view task input */
+.task-item input[data-task-id] {
+  font-weight: 600 !important;
+}
+
+/* ─────────────────────────────────────────────
+   TAB TITLES — Pill Style (modern + clean)
+   ───────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  font-size: 1.05em !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+
+  color: #374151;
+  background-color: #f3f4f6; 
+
+  padding: 8px 14px;
+  border-radius: 999px; 
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+.tab.active {
+  font-size: 1.05em !important;
+  font-weight: 700 !important;
+
+  color: #ffffff !important;
+  background-color: #667eea;
+
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Hover */
+@media (hover: hover) {
+  .tab:hover {
+    background-color: #e5e7eb;
+    color: #111827;
+  }
+}
+
+/* Click feedback */
+.tab:active {
+  transform: scale(0.96);
+}
+
+/* Focus */
+.tab:focus-visible {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* ── Responsive ───────────────────── */
+
+@media (max-width: 900px) {
+  .tab {
+    font-size: 0.95em !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .tab {
+    font-size: 0.85em !important;
+    padding: 10px 14px !important;
+  }
+}

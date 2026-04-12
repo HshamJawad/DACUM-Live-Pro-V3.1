@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DACUM Live Pro V3.0 — User Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap');
+
+  :root {
+    --ink:    #1a1a2e;
+    --muted:  #5f6b7a;
+    --accent: #667eea;
+    --accent2:#764ba2;
+    --green:  #10b981;
+    --amber:  #f59e0b;
+    --red:    #ef4444;
+    --border: #e5e7eb;
+    --bg:     #f8f9ff;
+    --card:   #ffffff;
+    --grad:   linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--ink);
+    background: var(--bg);
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--grad);
+    color: white;
+    padding: 60px 24px 50px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 999px;
+    padding: 5px 16px;
+    font-size: 0.78em;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.2em, 6vw, 3.6em);
+    line-height: 1.15;
+    margin-bottom: 14px;
+  }
+  .hero p {
+    font-size: 1.1em;
+    opacity: 0.88;
+    max-width: 600px;
+    margin: 0 auto 28px;
+  }
+  .hero-meta {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 0.82em;
+    opacity: 0.75;
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 5px; }
+
+  /* ── NAV ── */
+  .toc-bar {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 0 24px;
+    box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+  }
+  .toc-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .toc-inner::-webkit-scrollbar { display: none; }
+  .toc-inner a {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    padding: 14px 13px;
+    font-size: 0.81em;
+    font-weight: 600;
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .toc-inner a:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 860px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ── SECTION ── */
+  .section { margin-top: 60px; }
+  .section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--grad);
+    color: white;
+    font-size: 0.72em;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .section h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.9em;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .section > p.lead {
+    color: var(--muted);
+    font-size: 1em;
+    margin-bottom: 28px;
+    max-width: 700px;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    flex-shrink: 0;
+  }
+  .card h3 { font-size: 1.05em; font-weight: 700; color: var(--ink); }
+  .card h3 small {
+    display: block;
+    font-size: 0.8em;
+    font-weight: 400;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  /* ── STEP LIST ── */
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step { display: flex; gap: 14px; align-items: flex-start; }
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--grad);
+    color: white;
+    font-size: 0.78em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step p { font-size: 0.93em; color: var(--ink); line-height: 1.6; }
+  .step p strong { color: var(--accent2); }
+
+  /* ── FEATURE GRID ── */
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+    margin-top: 10px;
+  }
+  .feat {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .feat-ico { font-size: 1.4em; flex-shrink: 0; margin-top: 1px; }
+  .feat strong { display: block; font-size: 0.9em; color: var(--ink); margin-bottom: 3px; }
+  .feat span { font-size: 0.82em; color: var(--muted); line-height: 1.5; }
+
+  /* ── BADGE PILLS ── */
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 999px; padding: 3px 10px;
+    font-size: 0.78em; font-weight: 700;
+  }
+  .pill-green  { background: #dcfce7; color: #15803d; }
+  .pill-blue   { background: #dbeafe; color: #1d4ed8; }
+  .pill-amber  { background: #fef3c7; color: #b45309; }
+  .pill-purple { background: #ede9fe; color: #7c3aed; }
+  .pill-red    { background: #fee2e2; color: #b91c1c; }
+  .pill-indigo { background: #eef0ff; color: #3b3fce; }
+
+  /* ── TOOLBAR DEMO ── */
+  .toolbar-demo {
+    background: #f7f7f8;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  }
+  .tb-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.78em; font-weight: 700;
+    white-space: nowrap;
+    border: 1.5px solid;
+  }
+  .tb-amber  { background: #fff8ee; border-color: #fcd68a; color: #92570a; }
+  .tb-indigo { background: #eef0ff; border-color: #b5bbf9; color: #3b3fce; }
+  .tb-green  { background: #edfaf4; border-color: #86e0b5; color: #0e7a4a; }
+  .tb-ghost  { background: #ffffff; border-color: #e2e2e4; color: #444447; }
+  .tb-red    { background: #fff0f0; border-color: #f9b3b3; color: #c41c1c; }
+  .tb-undo   { background: #ffffff; border-color: #e2e2e4; color: #444447; }
+  .tb-sep    { width: 1px; height: 22px; background: #d9d9db; margin: 0 2px; }
+
+  /* ── FLOW DIAGRAM ── */
+  .workflow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin: 16px 0;
+    row-gap: 10px;
+  }
+  .wf-step {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .wf-box {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .wf-box.active {
+    background: var(--grad);
+    color: white;
+    border-color: transparent;
+  }
+  .wf-arrow {
+    font-size: 1.1em;
+    color: var(--muted);
+    padding: 0 6px;
+  }
+
+  /* ── TABLE ── */
+  .ref-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.88em; margin-top: 12px;
+  }
+  .ref-table th {
+    background: #f3f4f6; padding: 10px 14px;
+    text-align: left; font-weight: 700;
+    color: var(--ink); border-bottom: 2px solid var(--border);
+  }
+  .ref-table td {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    vertical-align: top; color: var(--ink);
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: #fafafa; }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-radius: 10px; padding: 14px 18px;
+    margin: 16px 0; display: flex;
+    gap: 12px; align-items: flex-start;
+    font-size: 0.9em; line-height: 1.6;
+  }
+  .callout-tip  { background: #fffbeb; border: 1px solid #fde68a; }
+  .callout-info { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .callout-warn { background: #fff7ed; border: 1px solid #fed7aa; }
+  .callout-ok   { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .callout-icon { font-size: 1.3em; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── CARD VIEW SAMPLE ── */
+  .card-sample {
+    display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0;
+  }
+  .duty-chip {
+    background: linear-gradient(145deg,#bfdbfe,#93c5fd);
+    border: 2px solid #60a5fa; border-radius: 12px;
+    padding: 10px 14px; font-size: 0.8em;
+    font-weight: 700; color: #1e40af; min-width: 100px;
+  }
+  .task-chip {
+    background: linear-gradient(145deg,#fef9c3,#fef08a);
+    border: 2px solid #facc15; border-radius: 12px;
+    padding: 10px 14px; font-size: 0.8em;
+    font-weight: 700; color: #854d0e; min-width: 100px;
+  }
+  .chip-label { font-size: 0.68em; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+  .chip-text  { font-size: 0.9em; font-style: italic; font-weight: 400; }
+
+  /* ── FOOTER ── */
+  .guide-footer {
+    background: var(--ink);
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    padding: 36px 24px;
+    font-size: 0.85em;
+  }
+  .guide-footer strong { color: white; }
+  .guide-footer a { color: #a5b4fc; text-decoration: none; }
+
+  hr.section-divider {
+    border: none; border-top: 1px solid var(--border); margin: 48px 0 0;
+  }
+
+  @media (max-width: 640px) {
+    .feat-grid { grid-template-columns: 1fr; }
+    .hero h1   { font-size: 2em; }
+    .workflow  { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-badge">📘 Official Documentation</div>
+  <h1>DACUM Live Pro V3.0</h1>
+  <p>A comprehensive guide to occupational analysis, task verification, competency mapping, and training design — all in your browser.</p>
+  <div class="hero-meta">
+    <span>🗓 Version 3.0 — 2026</span>
+    <span>👨‍💻 by Husham Jawad Kadhim</span>
+    <span>🌐 Works in browser · No install</span>
+    <span>📡 Live workshop voting support</span>
+  </div>
+</div>
+
+<!-- ══ STICKY NAV ════════════════════════════════════════════════ -->
+<nav class="toc-bar">
+  <div class="toc-inner">
+    <a href="#overview">🗺 Overview</a>
+    <a href="#projects">📁 Projects</a>
+    <a href="#toolbar">🔧 Toolbar</a>
+    <a href="#chart-info">📋 Chart Info</a>
+    <a href="#duties">✅ Duties & Tasks</a>
+    <a href="#ai">🤖 AI Generation</a>
+    <a href="#additional">📚 Additional Info</a>
+    <a href="#verification">🎯 Verification</a>
+    <a href="#live-workshop">📡 Live Workshop</a>
+    <a href="#clustering">🧩 Clusters</a>
+    <a href="#outcomes">🎓 Outcomes</a>
+    <a href="#modules">📦 Modules</a>
+    <a href="#skills">📊 Skills Matrix</a>
+    <a href="#export">📤 Export</a>
+    <a href="#import">📥 Import</a>
+    <a href="#tips">💡 Tips</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ══ OVERVIEW ════════════════════════════════════════════════ -->
+<div class="section" id="overview">
+  <div class="section-label">🗺 Overview</div>
+  <h2>What is DACUM Live Pro?</h2>
+  <p class="lead">DACUM Live Pro is a browser-based occupational analysis platform that guides curriculum developers and TVET specialists through the full DACUM process — from defining duties and tasks all the way through to structured training modules — with AI assistance and real-time live workshop voting.</p>
+
+  <div class="feat-grid">
+    <div class="feat"><div class="feat-ico">🤖</div><div><strong>AI-Powered Generation</strong><span>Generate complete DACUM drafts (duties + tasks) automatically from occupation and job titles</span></div></div>
+    <div class="feat"><div class="feat-ico">📡</div><div><strong>Live Workshop Voting</strong><span>Share a QR code or link for participants to rate tasks in real time. Results aggregate instantly.</span></div></div>
+    <div class="feat"><div class="feat-ico">📁</div><div><strong>Multi-Project Sidebar</strong><span>Manage multiple DACUM projects simultaneously, switch between them instantly with full state preservation</span></div></div>
+    <div class="feat"><div class="feat-ico">🧩</div><div><strong>Competency Clustering</strong><span>Group related tasks into competency clusters with performance criteria and range of variables</span></div></div>
+    <div class="feat"><div class="feat-ico">🎓</div><div><strong>Learning Outcomes</strong><span>Map performance criteria to learning outcomes for competency-based training design</span></div></div>
+    <div class="feat"><div class="feat-ico">📦</div><div><strong>Module Mapping</strong><span>Organize learning outcomes into structured training modules ready for curriculum development</span></div></div>
+    <div class="feat"><div class="feat-ico">📄</div><div><strong>PDF & Word Export</strong><span>Export your complete DACUM chart and verification results as formatted PDF or .docx documents</span></div></div>
+    <div class="feat"><div class="feat-ico">💾</div><div><strong>JSON Save / Import</strong><span>Save projects as portable JSON files. Import single or multiple files — each becomes a project in the sidebar.</span></div></div>
+  </div>
+
+  <div class="callout callout-info" style="margin-top:20px;">
+    <div class="callout-icon">ℹ️</div>
+    <div>DACUM Live Pro works entirely in the browser. No installation is required. Data is stored in browser localStorage and in JSON files you download. For live workshop voting, an internet connection is needed to communicate with the voting backend.</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ PROJECTS SIDEBAR ════════════════════════════════════════ -->
+<div class="section" id="projects">
+  <div class="section-label">📁 Projects Sidebar</div>
+  <h2>Managing Multiple Projects</h2>
+  <p class="lead">The fixed sidebar on the left lets you create, switch, rename, and delete projects without losing your work.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#ede9fe;">📁</div>
+      <h3>Project Cards<small>Each card shows project name, date, duties count, and tasks count</small></h3>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><p>Click <strong>＋ New</strong> in the sidebar header to create a new project. The current project is auto-saved first.</p></div>
+      <div class="step"><div class="step-num">2</div><p>Click any project card to <strong>load it</strong>. The active project is highlighted with a purple border.</p></div>
+      <div class="step"><div class="step-num">3</div><p>Click <strong>✏️</strong> on a card to rename the project inline — press <kbd>Enter</kbd> to save or <kbd>Esc</kbd> to cancel.</p></div>
+      <div class="step"><div class="step-num">4</div><p>Click <strong>✕</strong> (red) to delete a project permanently after confirmation.</p></div>
+      <div class="step"><div class="step-num">5</div><p>Use the <strong>Search</strong> box at the top of the sidebar to filter projects by name.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#dcfce7;">🔄</div>
+      <h3>Auto-Save<small>Your work is never lost</small></h3>
+    </div>
+    <p style="font-size:0.92em;color:var(--muted);line-height:1.7;">
+      Every edit triggers a debounced auto-save (800 ms) to localStorage. When you switch projects, the current one is saved automatically. A crash-recovery dialog appears on reload if unsaved edits are detected.
+    </p>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-icon">💡</div>
+    <div>Collapse the sidebar with the <strong>◀</strong> toggle button to gain more screen space during card editing or workshop presentations.</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ TOOLBAR ════════════════════════════════════════════════ -->
+<div class="section" id="toolbar">
+  <div class="section-label">🔧 Toolbar</div>
+  <h2>Top Toolbar</h2>
+  <p class="lead">The fixed toolbar provides instant access to the most common actions from any tab.</p>
+
+  <div class="toolbar-demo">
+    <span class="tb-btn tb-amber">🔍 Snapshot</span>
+    <span class="tb-sep"></span>
+    <span class="tb-btn tb-indigo">⬇ Export</span>
+    <span class="tb-btn tb-green">⬆ Import</span>
+    <span class="tb-sep"></span>
+    <span class="tb-btn tb-ghost">PDF PDF</span>
+    <span class="tb-btn tb-ghost">DOC Word</span>
+    <span class="tb-sep"></span>
+    <span class="tb-btn tb-red">✕ Clear All</span>
+    <span class="tb-sep"></span>
+    <span class="tb-btn tb-undo">↩ Undo</span>
+    <span class="tb-btn tb-undo">↪ Redo</span>
+    <span class="tb-btn tb-amber">🔍</span>
+  </div>
+
+  <table class="ref-table">
+    <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill pill-amber">🔍 Snapshot</span></td><td>Saves a named checkpoint of the current state. Restore any snapshot later from the lens (🔍) modal.</td></tr>
+      <tr><td><span class="pill pill-indigo">⬇ Export</span></td><td>Downloads the current project as a <code>.json</code> file named <em>ProjectName_YYYY-MM-DD_HH-MM.json</em>.</td></tr>
+      <tr><td><span class="pill pill-green">⬆ Import</span></td><td>Imports one or more <code>.json</code> files. Each file becomes a new project in the sidebar.</td></tr>
+      <tr><td><span class="pill pill-blue">PDF</span></td><td>Exports the DACUM chart as a landscape PDF document.</td></tr>
+      <tr><td><span class="pill pill-blue">Word</span></td><td>Exports the DACUM chart as a formatted <code>.docx</code> file.</td></tr>
+      <tr><td><span class="pill pill-red">✕ Clear All</span></td><td>Clears all data in the current project after showing a smart summary of what will be erased.</td></tr>
+      <tr><td><span class="pill">↩↪ Undo / Redo</span></td><td>Step backward or forward through structural edits to duties and tasks. Keyboard shortcuts: <kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd>.</td></tr>
+      <tr><td><span class="pill pill-amber">🔍 Snapshots</span></td><td>Opens the floating snapshot manager showing all saved checkpoints with restore and delete controls.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ CHART INFO ═════════════════════════════════════════════ -->
+<div class="section" id="chart-info">
+  <div class="section-label">📋 Chart Info</div>
+  <h2>Chart Info Tab</h2>
+  <p class="lead">Your starting point. Define the occupational context that the AI and all other tabs rely on.</p>
+
+  <div class="feat-grid">
+    <div class="feat"><div class="feat-ico">🏭</div><div><strong>Occupation Title</strong><span>The broad occupation being analyzed (e.g., "Welding"). Used by AI generation and in exports.</span></div></div>
+    <div class="feat"><div class="feat-ico">👷</div><div><strong>Job Title</strong><span>The specific role within the occupation (e.g., "Submerged Arc Welder"). Scopes AI output precisely.</span></div></div>
+    <div class="feat"><div class="feat-ico">🌍</div><div><strong>Sector & Context</strong><span>Industry sector and country/context. Helps the AI generate realistic, labor-market-informed tasks.</span></div></div>
+    <div class="feat"><div class="feat-ico">🖼️</div><div><strong>Organization Logos</strong><span>Upload Produced For and Produced By logos. They appear in the header of the exported DACUM chart.</span></div></div>
+    <div class="feat"><div class="feat-ico">👥</div><div><strong>Panel Members</strong><span>List facilitators, observers, and panel members (one per line). Printed on the chart header.</span></div></div>
+    <div class="feat"><div class="feat-ico">📅</div><div><strong>Date & Venue</strong><span>Record the workshop date and location for the official DACUM Research Chart header.</span></div></div>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-icon">💡</div>
+    <div>Fill in <strong>Occupation Title</strong> and <strong>Job Title</strong> <em>before</em> using AI Generation. These two fields directly shape the quality and relevance of the generated DACUM draft.</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ DUTIES & TASKS ═════════════════════════════════════════ -->
+<div class="section" id="duties">
+  <div class="section-label">✅ Duties &amp; Tasks</div>
+  <h2>Duties &amp; Tasks Tab</h2>
+  <p class="lead">The core of the DACUM chart. Define broad responsibility areas (duties) and the specific observable work activities (tasks) under each.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#bfdbfe;">🃏</div>
+      <h3>Card View<small>Default view — DACUM sticky-card style</small></h3>
+    </div>
+    <p style="font-size:0.9em;color:var(--muted);margin-bottom:14px;">Each duty appears as a fixed blue card; its tasks scroll horizontally as yellow cards — mimicking the physical DACUM workshop wall.</p>
+    <div class="card-sample">
+      <div class="duty-chip"><div class="chip-label">Duty 1</div><div class="chip-text">Apply Workplace Safety</div></div>
+      <div class="task-chip"><div class="chip-label">Task 1</div><div class="chip-text">Inspect equipment before use</div></div>
+      <div class="task-chip"><div class="chip-label">Task 2</div><div class="chip-text">Report hazards to supervisor</div></div>
+    </div>
+    <div class="steps" style="margin-top:8px;">
+      <div class="step"><div class="step-num">1</div><p>Click <strong>＋ Add Duty</strong> (green button) to create a new blue duty card. Type the duty title directly in the card.</p></div>
+      <div class="step"><div class="step-num">2</div><p>Click <strong>＋ Task</strong> inside the scroll strip to add a yellow task card under the duty.</p></div>
+      <div class="step"><div class="step-num">3</div><p>Click the <strong>red ✕</strong> badge on any card to delete it. Undo is available immediately.</p></div>
+      <div class="step"><div class="step-num">4</div><p>Scroll horizontally inside a duty row to reveal additional task cards when many tasks exist.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#e0f2fe;">📋</div>
+      <h3>Table View<small>Classic list-based editing</small></h3>
+    </div>
+    <p style="font-size:0.9em;color:var(--muted);">Toggle to Table View using the <strong>📋 Table View</strong> button (below the AI section). The same data is displayed as labeled input rows — ideal for copy-paste or bulk editing.</p>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-icon">📝</div>
+    <div><strong>Task writing format:</strong> Action Verb + Object + Context (optional)<br>
+    <em>Example: "Calibrate testing equipment according to manufacturer specifications"</em><br>
+    Use specific occupational verbs (Install, Inspect, Calibrate, Diagnose) — avoid vague cognitive verbs (Learn, Understand, Know).</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ AI GENERATION ═════════════════════════════════════════ -->
+<div class="section" id="ai">
+  <div class="section-label">🤖 AI Generation</div>
+  <h2>AI-Powered DACUM Generation</h2>
+  <p class="lead">Automatically generate a complete DACUM draft — duties and tasks — from the job information you entered in Chart Info.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#ede9fe;">🤖</div>
+      <h3>How to use AI Generation<small>One click — full DACUM draft</small></h3>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><p>Fill in <strong>Occupation Title</strong> and <strong>Job Title</strong> in the Chart Info tab.</p></div>
+      <div class="step"><div class="step-num">2</div><p>Navigate to <strong>Duties &amp; Tasks</strong> tab and click <strong>🤖 Generate AI Draft</strong>.</p></div>
+      <div class="step"><div class="step-num">3</div><p>Wait for the AI to return a structured JSON response (typically 6–12 duties, 6–20 tasks each).</p></div>
+      <div class="step"><div class="step-num">4</div><p>Review the generated duties and tasks in Card View. Edit, add, or delete as needed.</p></div>
+    </div>
+  </div>
+
+  <div class="feat-grid">
+    <div class="feat"><div class="feat-ico">🎯</div><div><strong>Job-scoped output</strong><span>AI targets the specific job role, not the entire occupation — producing precise, realistic tasks</span></div></div>
+    <div class="feat"><div class="feat-ico">📊</div><div><strong>Labor-market informed</strong><span>Uses occupational logic and contextual signals (sector, country) for relevant task generation</span></div></div>
+    <div class="feat"><div class="feat-ico">⚡</div><div><strong>State-first rendering</strong><span>All generated content is written to state before rendering — no flickering or data loss</span></div></div>
+    <div class="feat"><div class="feat-ico">🔄</div><div><strong>Undo available</strong><span>AI generation is added to the undo stack — press Ctrl+Z to revert if needed</span></div></div>
+  </div>
+
+  <div class="callout callout-warn">
+    <div class="callout-icon">⚠️</div>
+    <div>AI generation <strong>replaces</strong> all existing duties and tasks. If you have entered content manually, the tool will warn you before overwriting. Save your work first if needed.</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ ADDITIONAL INFO ════════════════════════════════════════ -->
+<div class="section" id="additional">
+  <div class="section-label">📚 Additional Info</div>
+  <h2>Additional Info Tab</h2>
+  <p class="lead">Capture supporting occupational knowledge beyond duties and tasks — required knowledge, skills, worker behaviors, tools, trends, acronyms, and career paths.</p>
+
+  <table class="ref-table">
+    <thead><tr><th>Section</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Knowledge Requirements</strong></td><td>Factual and conceptual knowledge a worker must possess to perform the job</td></tr>
+      <tr><td><strong>Skills Requirements</strong></td><td>Technical and practical skills needed (distinct from tasks)</td></tr>
+      <tr><td><strong>Worker Behaviors / Traits</strong></td><td>Attitudes, work habits, and personal characteristics valued in the occupation</td></tr>
+      <tr><td><strong>Tools, Equipment, Supplies</strong></td><td>Physical items workers routinely use — tools, machinery, materials</td></tr>
+      <tr><td><strong>Future Trends &amp; Concerns</strong></td><td>Emerging technologies, regulatory changes, or shifts impacting the occupation</td></tr>
+      <tr><td><strong>Acronyms</strong></td><td>Industry-specific abbreviations and terminology used in the occupation</td></tr>
+      <tr><td><strong>Career Path</strong></td><td>Progression routes within the occupation — entry, skilled, advanced, management</td></tr>
+      <tr><td><strong>+ Custom Sections</strong></td><td>Add unlimited custom sections with user-defined headings for occupation-specific needs</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-tip">
+    <div class="callout-icon">💡</div>
+    <div>Section headings are <strong>editable</strong> — click ✏️ Rename to change any heading to match your national or institutional terminology. All headings are saved in the JSON export.</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ TASK VERIFICATION ══════════════════════════════════════ -->
+<div class="section" id="verification">
+  <div class="section-label">🎯 Task Verification</div>
+  <h2>Task Verification Tab</h2>
+  <p class="lead">Validate your DACUM tasks through structured rating — either via individual expert ratings or through live workshop voting with multiple participants.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#fef3c7;">⚖️</div>
+      <h3>Rating Dimensions<small>Rate each task on three criteria (scale 0–3)</small></h3>
+    </div>
+    <table class="ref-table">
+      <thead><tr><th>Dimension</th><th>What it measures</th><th>Scale</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Importance</strong></td><td>How critical is this task to job performance?</td><td>0 = Not important → 3 = Critical</td></tr>
+        <tr><td><strong>Frequency</strong></td><td>How often is this task performed?</td><td>0 = Rarely → 3 = Daily</td></tr>
+        <tr><td><strong>Difficulty</strong></td><td>How hard is it to learn this task?</td><td>0 = Easy → 3 = Very difficult</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#dcfce7;">📊</div>
+      <h3>Priority Index &amp; Dashboard<small>Automatically calculated from mean ratings</small></h3>
+    </div>
+    <div class="feat-grid" style="margin-top:0;">
+      <div class="feat"><div class="feat-ico">🔢</div><div><strong>I × F formula</strong><span>Priority Index = Mean Importance × Mean Frequency (default)</span></div></div>
+      <div class="feat"><div class="feat-ico">🔢</div><div><strong>I × F × D formula</strong><span>Extended formula adding Mean Difficulty for training load analysis</span></div></div>
+      <div class="feat"><div class="feat-ico">📋</div><div><strong>Task Dashboard</strong><span>Ranked table showing all verified tasks by priority index with high-priority highlighting</span></div></div>
+      <div class="feat"><div class="feat-ico">📋</div><div><strong>Duty-Level Summary</strong><span>Aggregated priority and training load scores per duty — sortable by priority or training load</span></div></div>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-icon">📂</div>
+    <div>The dashboard supports a <strong>multi-project view</strong> — use the project selector dropdown above the dashboard to view verification results for any other saved project without switching the active project.</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ LIVE WORKSHOP ══════════════════════════════════════════ -->
+<div class="section" id="live-workshop">
+  <div class="section-label">📡 Live Workshop</div>
+  <h2>Live Workshop Voting</h2>
+  <p class="lead">Collect real-time ratings from multiple participants simultaneously using a shared link or QR code — no app installation required on participants' devices.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#d1fae5;">🚀</div>
+      <h3>Starting a Live Session<small>3 steps to begin</small></h3>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><p>Ensure duties and tasks are complete in the Duties &amp; Tasks tab, then navigate to <strong>Task Verification</strong> and select <strong>Workshop (Facilitated)</strong> mode.</p></div>
+      <div class="step"><div class="step-num">2</div><p>Click <strong>🔒 Finalize &amp; Create Live Voting Session</strong>. This locks the duties/tasks and generates a unique session ID and participant link.</p></div>
+      <div class="step"><div class="step-num">3</div><p>Share the participant link or display the <strong>QR code</strong>. Participants open it on any device with a browser and begin rating tasks.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#dbeafe;">🔄</div>
+      <h3>Collecting &amp; Viewing Results</h3>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">4</div><p>Click <strong>🔄 Refresh Voting Results</strong> to pull the latest votes from the server. The dashboard updates with aggregated means and priority indices.</p></div>
+      <div class="step"><div class="step-num">5</div><p>When voting is complete, click <strong>🔒 Close Voting</strong> to prevent further submissions.</p></div>
+      <div class="step"><div class="step-num">6</div><p>Export results as <strong>JSON</strong>, <strong>CSV</strong>, or a verified <strong>PDF/Word report</strong>.</p></div>
+    </div>
+  </div>
+
+  <div class="callout callout-ok">
+    <div class="callout-icon">✅</div>
+    <div>Each project stores its own live session independently. Switching to another project in the sidebar shows that project's session information — including its link, QR code, and voting results.</div>
+  </div>
+
+  <div class="callout callout-warn">
+    <div class="callout-icon">⚠️</div>
+    <div>Live voting requires an internet connection to communicate with the DACUM voting backend. Individual rating mode (no participants) works fully offline.</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ COMPETENCY CLUSTERS ════════════════════════════════════ -->
+<div class="section" id="clustering">
+  <div class="section-label">🧩 Competency Clusters</div>
+  <h2>Competency Clusters Tab</h2>
+  <p class="lead">Group related verified tasks into competency clusters and define the performance criteria and range of variables for each cluster.</p>
+
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><p>After verifying tasks, click <strong>⚡ Proceed to Competency Clustering</strong> in the Task Verification tab (or bypass verification if needed).</p></div>
+    <div class="step"><div class="step-num">2</div><p>Tasks appear in the <strong>Available Tasks</strong> pool, sorted by priority index (highest first).</p></div>
+    <div class="step"><div class="step-num">3</div><p>Click <strong>➕ Add Cluster</strong> and give it a name representing the competency area.</p></div>
+    <div class="step"><div class="step-num">4</div><p>Use the task dropdown to assign tasks to the cluster. Add <strong>Performance Criteria</strong> describing what competent performance looks like.</p></div>
+    <div class="step"><div class="step-num">5</div><p>Add <strong>Range of Variables</strong> to define the scope and conditions under which the competency is demonstrated.</p></div>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-icon">💡</div>
+    <div>Performance Criteria are the bridge between the DACUM chart and learning outcomes. Each criterion should be specific, observable, and measurable — they become the source material for the Learning Outcomes tab.</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ LEARNING OUTCOMES ══════════════════════════════════════ -->
+<div class="section" id="outcomes">
+  <div class="section-label">🎓 Learning Outcomes</div>
+  <h2>Learning Outcomes Tab</h2>
+  <p class="lead">Map performance criteria from your competency clusters to structured learning outcomes for training design.</p>
+
+  <div class="feat-grid">
+    <div class="feat"><div class="feat-ico">➕</div><div><strong>Add Learning Outcomes</strong><span>Create LOs and link them to specific clusters and performance criteria from your analysis</span></div></div>
+    <div class="feat"><div class="feat-ico">🔗</div><div><strong>Criteria Mapping</strong><span>Select which performance criteria each LO addresses — maintains traceability from tasks to outcomes</span></div></div>
+    <div class="feat"><div class="feat-ico">📤</div><div><strong>Export to Module Builder</strong><span>Export learning outcomes as a JSON file ready to import into the DACUM Module Builder tool</span></div></div>
+    <div class="feat"><div class="feat-ico">📋</div><div><strong>Evidence Requirements</strong><span>Specify the type of evidence needed to demonstrate achievement of each learning outcome</span></div></div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ MODULE MAPPING ═════════════════════════════════════════ -->
+<div class="section" id="modules">
+  <div class="section-label">📦 Module Mapping</div>
+  <h2>Module Mapping Tab</h2>
+  <p class="lead">Organize your learning outcomes into logical training modules — the final step before curriculum development.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#dbeafe;">📦</div>
+      <h3>Creating Modules<small>Group LOs into coherent training units</small></h3>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><p>Click <strong>✨ Create New Module</strong> and enter the module title.</p></div>
+      <div class="step"><div class="step-num">2</div><p>Assign learning outcomes to the module from the available LO list.</p></div>
+      <div class="step"><div class="step-num">3</div><p>Set module duration, credit hours, and any prerequisites.</p></div>
+      <div class="step"><div class="step-num">4</div><p>Export the complete module mapping as JSON for use in the Module Builder tool.</p></div>
+    </div>
+  </div>
+
+  <div class="workflow">
+    <div class="wf-step">
+      <div class="wf-box active">Duties & Tasks</div>
+      <div class="wf-arrow">→</div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-box">Verification</div>
+      <div class="wf-arrow">→</div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-box">Clusters</div>
+      <div class="wf-arrow">→</div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-box">LOs</div>
+      <div class="wf-arrow">→</div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-box active">Modules</div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ SKILLS MATRIX ══════════════════════════════════════════ -->
+<div class="section" id="skills">
+  <div class="section-label">📊 Skills Matrix</div>
+  <h2>Skills Level Matrix</h2>
+  <p class="lead">Map generic workplace competencies to four qualification levels — an integrated skills framework embedded in the DACUM chart.</p>
+
+  <table class="ref-table">
+    <thead><tr><th>Level</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill pill-purple">Craftsman</span></td><td>Highest level — fully independent, can supervise and train others</td></tr>
+      <tr><td><span class="pill pill-blue">Skilled</span></td><td>Works independently with minimal supervision</td></tr>
+      <tr><td><span class="pill pill-amber">Semi-Skilled</span></td><td>Requires some guidance for complex tasks</td></tr>
+      <tr><td><span class="pill pill-green">Foundation</span></td><td>Entry level — requires close supervision and instruction</td></tr>
+    </tbody>
+  </table>
+
+  <p style="font-size:0.9em;color:var(--muted);margin-top:14px;">Competency categories include: Communication, Teamwork, Self-marketing, Problem Solving, Entrepreneurship, Computer/ICT, Foreign Languages, Mathematical Skills, and custom categories.</p>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ EXPORT ════════════════════════════════════════════════ -->
+<div class="section" id="export">
+  <div class="section-label">📤 Export</div>
+  <h2>Export Options</h2>
+  <p class="lead">Export your DACUM chart and analysis results in multiple formats for sharing, printing, and further development.</p>
+
+  <div class="feat-grid">
+    <div class="feat"><div class="feat-ico">📄</div><div><strong>Export PDF</strong><span>Generates a landscape A4 PDF with the full DACUM Research Chart including duties, tasks, and additional info sections</span></div></div>
+    <div class="feat"><div class="feat-ico">📝</div><div><strong>Export Word (.docx)</strong><span>Produces a structured Word document of the DACUM chart, formatted for official use and printing</span></div></div>
+    <div class="feat"><div class="feat-ico">💾</div><div><strong>Export JSON (Project)</strong><span>Downloads the complete project state — all tabs, ratings, clusters, outcomes, and modules. File named: <em>ProjectName_YYYY-MM-DD_HH-MM.json</em></span></div></div>
+    <div class="feat"><div class="feat-ico">📊</div><div><strong>Export Dashboard CSV</strong><span>Exports the verification dashboard as a CSV spreadsheet for analysis in Excel or similar tools</span></div></div>
+    <div class="feat"><div class="feat-ico">📋</div><div><strong>Verification PDF/Word</strong><span>Exports the task verification results report including priority rankings and duty-level summaries</span></div></div>
+    <div class="feat"><div class="feat-ico">🗳️</div><div><strong>Live Results Export</strong><span>After live voting, export JSON (with raw vote data), CSV, or snapshot — available from the Task Verification tab</span></div></div>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-icon">💡</div>
+    <div>The JSON export file name uses the <strong>sidebar project name</strong> (even if it was renamed after import) — not the occupation title. This ensures exported files always reflect the name you see in the sidebar.</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ IMPORT ════════════════════════════════════════════════ -->
+<div class="section" id="import">
+  <div class="section-label">📥 Import</div>
+  <h2>Importing Projects</h2>
+  <p class="lead">Import previously exported JSON files — each file is automatically registered as a new project in the sidebar.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#dcfce7;">📥</div>
+      <h3>Single &amp; Multi-File Import<small>Import one or many files at once</small></h3>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><p>Click <strong>⬆ Import</strong> in the toolbar. A file picker opens — you can select <strong>multiple .json files</strong> at once.</p></div>
+      <div class="step"><div class="step-num">2</div><p>Each file is parsed and added as a <strong>separate project</strong> in the sidebar. The last imported file becomes the active project.</p></div>
+      <div class="step"><div class="step-num">3</div><p>The project name is taken from the <strong>filename</strong> (stripping the date/time suffix) — so a file named <code>Husham_2026-03-14_22-45.json</code> creates a project called <em>Husham</em>.</p></div>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-icon">ℹ️</div>
+    <div>DACUM Live Pro supports both the <strong>new format</strong> (with <code>dutiesData</code> array) and the <strong>legacy format</strong> (flat <code>duties</code> array from older exports). Both import correctly with no data loss.</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ══ TIPS ══════════════════════════════════════════════════ -->
+<div class="section" id="tips">
+  <div class="section-label">💡 Pro Tips</div>
+  <h2>Tips &amp; Best Practices</h2>
+
+  <div class="feat-grid">
+    <div class="feat"><div class="feat-ico">📋</div><div><strong>Chart Info first</strong><span>Always fill Occupation Title and Job Title before using AI Generation or starting a live session.</span></div></div>
+    <div class="feat"><div class="feat-ico">💾</div><div><strong>Export often</strong><span>Export the JSON project file after each major phase (duties, verification, clustering). Filenames include date and time for versioning.</span></div></div>
+    <div class="feat"><div class="feat-ico">🃏</div><div><strong>Card View for workshops</strong><span>Use Card View during live DACUM workshops — it mirrors the physical sticky-card experience participants are familiar with.</span></div></div>
+    <div class="feat"><div class="feat-ico">📊</div><div><strong>Table View for bulk edits</strong><span>Switch to Table View when importing data from a spreadsheet or doing large-scale edits — copy-paste works naturally in table rows.</span></div></div>
+    <div class="feat"><div class="feat-ico">📸</div><div><strong>Use Snapshots as checkpoints</strong><span>Save a named snapshot before AI generation or a major restructure so you can revert cleanly if needed.</span></div></div>
+    <div class="feat"><div class="feat-ico">📁</div><div><strong>One project per occupation</strong><span>Keep a separate sidebar project for each occupational analysis. Use meaningful names — they become the export filenames.</span></div></div>
+    <div class="feat"><div class="feat-ico">🔢</div><div><strong>Priority formula matters</strong><span>Use I×F for standard DACUM analysis. Switch to I×F×D when training load estimation is needed for curriculum sequencing.</span></div></div>
+    <div class="feat"><div class="feat-ico">📡</div><div><strong>Test live voting first</strong><span>Run a quick test session with a colleague before the real workshop to verify the participant link works on your network.</span></div></div>
+    <div class="feat"><div class="feat-ico">↩</div><div><strong>Undo covers structural edits</strong><span>Add / remove duties and tasks are all undoable with Ctrl+Z. Text edits inside cards use a burst-debounce so fast typing is a single undo step.</span></div></div>
+    <div class="feat"><div class="feat-ico">🌐</div><div><strong>Works offline (mostly)</strong><span>All tabs work without internet. Only AI generation and live workshop voting require an active connection to the backend server.</span></div></div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<!-- ══ FOOTER ════════════════════════════════════════════════ -->
+<footer class="guide-footer">
+  <p style="margin-bottom:6px;"><strong>DACUM Live Pro V3.0</strong> — User Guide</p>
+  <p>Created by <strong>Husham Jawad Kadhim</strong> · TVET Curriculum Developer &amp; Educational Technology Innovator</p>
+  <p style="margin-top:6px;">
+    ✉ <a href="mailto:hshaam77@gmail.com">hshaam77@gmail.com</a> &nbsp;·&nbsp;
+    💼 <a href="https://www.linkedin.com/in/husham-jawad-kadhim-954006200/" target="_blank">LinkedIn</a> &nbsp;·&nbsp;
+    🌐 <a href="https://hshamjawad.github.io/DACUM-Live-Pro-V3.0/" target="_blank">DACUM Live Pro</a>
+  </p>
+  <p style="margin-top:10px;font-size:0.78em;opacity:0.55;font-style:italic;">
+    DACUM Live Pro is provided "as is" without warranty of any kind. The developer assumes no responsibility for inaccuracies or omissions in generated documents. Users are solely responsible for verifying all content before use.
+  </p>
+</footer>
+
+</body>
+</html>

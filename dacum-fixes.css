@@ -1,0 +1,99 @@
+/* ============================================================
+   dacum-fixes.css  — v3.1 regression fixes
+   Load LAST (after dacum-responsive.css and tv-refactor.css)
+   ============================================================ */
+
+/* ── FIX 2: Button hover clipping ─────────────────────────────
+   The global rule in dacum-styles.css applies
+   transform:translateY(-2px) to ALL buttons which clips them
+   inside any overflow:hidden ancestor.
+   Strategy: override the transform to none everywhere,
+   use filter+box-shadow for the visual lift instead.
+   Exceptions (scale on active) are preserved.
+   ──────────────────────────────────────────────────────────── */
+
+/* Remove the translateY on ALL buttons globally */
+button:hover {
+  transform: none !important;
+  filter: brightness(1.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* Keep scale-down on active (feels natural, never clips) */
+button:active {
+  transform: scale(0.97) !important;
+  filter: none;
+}
+
+/* Toolbar buttons: override the responsive sheet's scale too */
+#dacumTopToolbar button:hover,
+#dacumTopToolbar .dtb-btn:hover,
+#dacumTopToolbar .dtb-undo:not([disabled]):hover,
+#dacumTopToolbar .dtb-lens:hover,
+#dacumTopToolbar .dtb-hamburger:hover {
+  transform: none !important;
+  filter: brightness(1.05);
+}
+
+#dacumTopToolbar button:active,
+#dacumTopToolbar .dtb-btn:active {
+  transform: scale(0.97) !important;
+}
+
+/* TV-refactor action buttons */
+.tv-action-btn:hover { transform: none !important; filter: brightness(1.06); }
+.tv-action-btn:active { transform: scale(0.97) !important; filter: none; }
+
+/* Ensure parent containers in the toolbar never clip */
+#dacumTopToolbar,
+.dtb-left,
+.dtb-center,
+.dtb-right {
+  overflow: visible !important;
+}
+
+/* ── FIX 4: Hamburger visibility on resize / PWA desktop ──────
+   The hamburger is visible ≤1100px in dacum-responsive.css.
+   In PWA standalone mode the viewport can be any size — ensure
+   the hamburger shows whenever the sidebar toggle (#dpsToggle)
+   is hidden, regardless of how the resize event fires.
+   ──────────────────────────────────────────────────────────── */
+
+/* Already covered by responsive: show at ≤1100px.
+   Add PWA standalone safety: always show hamburger in standalone
+   (no hover capability reliable, touch-first) */
+@media (display-mode: standalone) {
+  .dtb-hamburger {
+    display: inline-flex !important;
+  }
+  #dpsToggle {
+    display: none !important;
+  }
+}
+
+/* ── PWA install button ────────────────────────────────────────
+   Hidden by default; shown via JS when beforeinstallprompt fires */
+#dacumInstallBtn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+  border-radius: 99px;
+  font-size: 0.82em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  box-shadow: 0 2px 8px rgba(102,126,234,0.35);
+  flex-shrink: 0;
+}
+#dacumInstallBtn.dacum-install-visible {
+  display: inline-flex;
+}
+#dacumInstallBtn:hover {
+  opacity: 0.88;
+  transform: none !important;
+  filter: brightness(1.1);
+}

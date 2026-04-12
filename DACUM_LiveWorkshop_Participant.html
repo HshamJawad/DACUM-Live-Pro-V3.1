@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DACUM Live Pro - Participant Voting</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+            text-align: center;
+        }
+
+        h2 {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin: 20px 0 15px 0;
+        }
+
+        .info-box {
+            background: #dbeafe;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .info-box h3 {
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #1e3a8a;
+            line-height: 1.6;
+        }
+
+        .duty-section {
+            background: #f9fafb;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            overflow-x: auto;
+        }
+
+        .duty-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .task-table {
+            width: 100%;
+            min-width: 800px;
+            margin-top: 15px;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .task-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .task-table th {
+            color: white;
+            font-weight: 600;
+            padding: 12px 10px;
+            text-align: center;
+            font-size: 0.85em;
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .task-table th:first-child {
+            text-align: left;
+            padding-left: 15px;
+        }
+
+        .task-table th:last-child {
+            border-right: none;
+        }
+
+        .task-table tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+            transition: background-color 0.2s;
+        }
+
+        .task-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .task-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .task-table td {
+            padding: 15px 10px;
+            vertical-align: middle;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .task-table td:last-child {
+            border-right: none;
+        }
+
+        .task-cell {
+            text-align: left;
+            font-size: 0.95em;
+            color: #374151;
+            font-weight: 500;
+            padding-left: 15px !important;
+        }
+
+        .rating-cell {
+            text-align: center;
+            padding: 10px 5px !important;
+        }
+
+        .rating-column {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rating-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .rating-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .rating-option label {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #667eea;
+            cursor: pointer;
+            margin: 0;
+            min-width: 12px;
+        }
+
+        .score-cell {
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #667eea;
+        }
+
+        .status-cell {
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .status-incomplete {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-complete {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .task-table {
+                font-size: 0.85em;
+            }
+
+            .task-table th,
+            .task-table td {
+                padding: 8px 5px;
+            }
+
+            .task-cell {
+                font-size: 0.85em;
+                padding-left: 10px !important;
+            }
+
+            .rating-option {
+                gap: 4px;
+            }
+
+            .rating-option input[type="radio"] {
+                width: 16px;
+                height: 16px;
+            }
+
+            .rating-option label {
+                font-size: 0.85em;
+            }
+        }
+
+        button {
+            cursor: pointer;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .status {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            border-radius: 12px;
+            display: none;
+            z-index: 1000;
+            max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .status.success {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            color: #065f46;
+            display: block;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            color: #991b1b;
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 DACUM Live Pro</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 20px;">Participant Voting</p>
+
+        <div id="loadingSection" class="loading">
+            <p>Loading voting session...</p>
+        </div>
+
+        <div id="votingSection" style="display: none;">
+            <div class="info-box">
+                <h3>📋 Occupation: <span id="occupationTitle"></span></h3>
+                <p><strong>Job Title:</strong> <span id="jobTitle"></span></p>
+                <p style="margin-top: 10px;">Rate each task on three dimensions (0-3). Your votes will be aggregated with other participants to determine training priorities.</p>
+            </div>
+
+            <div id="votingContainer">
+                <!-- Voting tasks will be displayed here -->
+            </div>
+
+            <button class="btn-success" onclick="submitVotes()" id="btnSubmitVotes">
+                ✅ Submit All Votes
+            </button>
+        </div>
+    </div>
+
+    <div id="statusMessage" class="status"></div>
+
+    <script>
+        // Backend API endpoint
+        const API_BASE = 'https://live-session-backend-production.up.railway.app/api';
+        
+        // Participant voting data
+        let participantVotes = {};
+        let sessionId = null;
+        let sessionData = null;
+        
+        // Show status message
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            setTimeout(() => {
+                statusEl.className = 'status';
+            }, 5000);
+        }
+        
+        // Load session data
+        async function loadSession(sessionId) {
+            try {
+                const response = await fetch(`${API_BASE}/get-session/${sessionId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    sessionData = result.data;
+                    
+                    // Check localStorage flag first
+                    if (localStorage.getItem('dacumVotingClosed_' + sessionId) === 'true') {
+                        document.getElementById('loadingSection').style.display = 'none';
+                        document.getElementById('votingSection').innerHTML = `
+                            <div style="text-align: center; padding: 40px; background: #fee2e2; border-radius: 12px; border: 2px solid #ef4444;">
+                                <h2 style="color: #991b1b; margin-bottom: 15px;">🔒 Voting Session Closed</h2>
+                                <p style="color: #7f1d1d; font-size: 1.1em;">Voting has been closed by the facilitator.</p>
+                                <p style="color: #7f1d1d; margin-top: 15px;">Thank you for your participation!</p>
+                            </div>
+                        `;
+                        document.getElementById('votingSection').style.display = 'block';
+                        return;
+                    }
+                    
+                    // Check if session is closed
+                    if (sessionData.closed) {
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('votingSection').innerHTML = `
+                    <div style="text-align: center; padding: 40px; background: #fee2e2; border-radius: 12px; border: 2px solid #ef4444;">
+                        <h2 style="color: #991b1b; margin-bottom: 15px;">🔒 Voting Session Closed</h2>
+                        <p style="color: #7f1d1d; font-size: 1.1em;">This voting session has been closed by the facilitator.</p>
+                        <p style="color: #7f1d1d; margin-top: 15px;">Thank you for your participation!</p>
+                    </div>
+                `;
+                document.getElementById('votingSection').style.display = 'block';
+                return;
+            }
+            
+                    renderVotingInterface(sessionData);
+                    document.getElementById('loadingSection').style.display = 'none';
+                    document.getElementById('votingSection').style.display = 'block';
+                } else {
+                    throw new Error(result.error || 'Failed to load session');
+                }
+                
+            } catch (error) {
+                console.error('Error loading session:', error);
+                showStatus(`Error loading session: ${error.message}`, 'error');
+                document.getElementById('loadingSection').innerHTML = '<p style="color: #ef4444;">Failed to load voting session. Please check your link.</p>';
+            }
+        }
+        
+        // Render voting interface
+        function renderVotingInterface(sessionData) {
+            document.getElementById('occupationTitle').textContent = sessionData.occupation;
+            document.getElementById('jobTitle').textContent = sessionData.jobTitle;
+            
+            const container = document.getElementById('votingContainer');
+            container.innerHTML = '';
+            
+            let taskCounter = 1;
+            
+            Object.keys(sessionData.duties).forEach(dutyId => {
+                const duty = sessionData.duties[dutyId];
+                
+                const dutySection = document.createElement('div');
+                dutySection.className = 'duty-section';
+                
+                let html = `<div class="duty-title">${escapeHtml(duty.title)}</div>`;
+                
+                html += `
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%;">Task</th>
+                                <th style="width: 13%;">Importance<br><span style="font-size: 0.75em; font-weight: 400;">(0=Not, 3=Critical)</span></th>
+                                <th style="width: 13%;">Frequency<br><span style="font-size: 0.75em; font-weight: 400;">(0=Rarely, 3=Daily)</span></th>
+                                <th style="width: 13%;">Difficulty<br><span style="font-size: 0.75em; font-weight: 400;">(0=Easy, 3=Very)</span></th>
+                                <th style="width: 13%;">Task Score</th>
+                                <th style="width: 13%;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                duty.tasks.forEach(task => {
+                    html += `
+                        <tr id="task_row_${task.id}">
+                            <td class="task-cell">${taskCounter}. ${escapeHtml(task.text)}</td>
+                            
+                            <td class="rating-cell">
+                                <div class="rating-column">
+                                    ${[0, 1, 2, 3].map(val => `
+                                        <div class="rating-option">
+                                            <input type="radio" 
+                                                   id="${task.id}_imp_${val}"
+                                                   name="${task.id}_importance" 
+                                                   value="${val}"
+                                                   onchange="recordVote('${task.id}', 'importance', ${val})">
+                                            <label for="${task.id}_imp_${val}">${val}</label>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </td>
+                            
+                            <td class="rating-cell">
+                                <div class="rating-column">
+                                    ${[0, 1, 2, 3].map(val => `
+                                        <div class="rating-option">
+                                            <input type="radio" 
+                                                   id="${task.id}_freq_${val}"
+                                                   name="${task.id}_frequency" 
+                                                   value="${val}"
+                                                   onchange="recordVote('${task.id}', 'frequency', ${val})">
+                                            <label for="${task.id}_freq_${val}">${val}</label>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </td>
+                            
+                            <td class="rating-cell">
+                                <div class="rating-column">
+                                    ${[0, 1, 2, 3].map(val => `
+                                        <div class="rating-option">
+                                            <input type="radio" 
+                                                   id="${task.id}_diff_${val}"
+                                                   name="${task.id}_difficulty" 
+                                                   value="${val}"
+                                                   onchange="recordVote('${task.id}', 'difficulty', ${val})">
+                                            <label for="${task.id}_diff_${val}">${val}</label>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </td>
+                            
+                            <td class="score-cell" id="score_${task.id}">—</td>
+                            
+                            <td class="status-cell">
+                                <span class="status-badge status-incomplete" id="status_${task.id}">Incomplete</span>
+                            </td>
+                        </tr>
+                    `;
+                    taskCounter++;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+                
+                dutySection.innerHTML = html;
+                container.appendChild(dutySection);
+            });
+        }
+        
+        // Record a vote
+        function recordVote(taskId, dimension, value) {
+            if (!participantVotes[taskId]) {
+                participantVotes[taskId] = {};
+            }
+            participantVotes[taskId][dimension] = parseInt(value);
+            
+            // Update task score and status
+            updateTaskDisplay(taskId);
+        }
+        
+        // Update task score and status badge
+        function updateTaskDisplay(taskId) {
+            const vote = participantVotes[taskId];
+            const scoreElement = document.getElementById('score_' + taskId);
+            const statusElement = document.getElementById('status_' + taskId);
+            
+            if (!scoreElement || !statusElement) return;
+            
+            const hasImportance = vote && vote.importance !== undefined;
+            const hasFrequency = vote && vote.frequency !== undefined;
+            const hasDifficulty = vote && vote.difficulty !== undefined;
+            
+            if (hasImportance && hasFrequency && hasDifficulty) {
+                // Calculate total score
+                const totalScore = vote.importance + vote.frequency + vote.difficulty;
+                scoreElement.textContent = totalScore;
+                
+                // Update status badge to complete
+                statusElement.textContent = 'Completed';
+                statusElement.className = 'status-badge status-complete';
+            } else {
+                // Incomplete
+                scoreElement.textContent = '—';
+                statusElement.textContent = 'Incomplete';
+                statusElement.className = 'status-badge status-incomplete';
+            }
+        }
+        
+        // Submit all votes
+        async function submitVotes() {
+            // Check localStorage flag first
+            if (localStorage.getItem('dacumVotingClosed_' + sessionId) === 'true') {
+                showStatus('Voting has been closed by the facilitator.', 'error');
+                document.getElementById('btnSubmitVotes').disabled = true;
+                return;
+            }
+            
+            // Filter to only fully completed tasks
+            const completedVotes = {};
+            Object.keys(participantVotes).forEach(taskId => {
+                const vote = participantVotes[taskId];
+                if (vote.importance !== undefined && vote.frequency !== undefined && vote.difficulty !== undefined) {
+                    completedVotes[taskId] = vote;
+                }
+            });
+            
+            // Validate that at least one task is fully rated
+            if (Object.keys(completedVotes).length === 0) {
+                showStatus('Please complete all three ratings for at least one task', 'error');
+                return;
+            }
+            
+
+            // Check if session is still open before submitting
+            try {
+                const checkResponse = await fetch(`${API_BASE}/get-session/${sessionId}`);
+                const checkResult = await checkResponse.json();
+                
+                if (checkResult.success && checkResult.data.closed) {
+                    showStatus('This voting session has been closed by the facilitator', 'error');
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking session status:', error);
+            }
+            
+            // Submit only completed votes to backend
+            try {
+                const response = await fetch(`${API_BASE}/submit-vote`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sessionId: sessionId,
+                        votes: completedVotes
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('✅ Votes submitted successfully! Thank you for participating.', 'success');
+                    document.getElementById('btnSubmitVotes').disabled = true;
+                    document.getElementById('votingContainer').style.opacity = '0.5';
+                } else {
+                    throw new Error(result.error || 'Failed to submit votes');
+                }
+                
+            } catch (error) {
+                console.error('Error submitting votes:', error);
+                showStatus(`Error submitting votes: ${error.message}`, 'error');
+            }
+        }
+        
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            sessionId = urlParams.get('lwsession');
+            
+            if (sessionId) {
+                loadSession(sessionId);
+            } else {
+                document.getElementById('loadingSection').innerHTML = '<p style="color: #ef4444;">No session ID provided. Please use the link provided by your facilitator.</p>';
+            }
+        });
+    </script>
+</body>
+</html>
