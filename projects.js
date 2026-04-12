@@ -207,6 +207,85 @@ export function clearAll() {
   showStatus(window.i18n ? window.i18n.t('msgClearAll') : '✅ All data cleared successfully.', 'success');
 }
 
+
+// ── Silent clear (no confirm dialog) — used by project switching ──
+
+export function clearAllSilent() {
+  // ── Chart Info ────────────────────────────────────────────
+  ['dacumDate','producedFor','producedBy','occupationTitle','jobTitle',
+   'sector','context','venue','facilitators','observers','panelMembers'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  appState.producedForImage = null;
+  appState.producedByImage  = null;
+  _resetImagePreview('producedFor');
+  _resetImagePreview('producedBy');
+
+  // ── Duties ────────────────────────────────────────────────
+  appState.dutiesData = [];
+  appState.dutyCount  = 0;
+  appState.taskCounts = {};
+  addDuty();
+  addTask(`duty_${appState.dutyCount}`);
+
+  // ── Additional Info ───────────────────────────────────────
+  _resetHeading('knowledgeHeading',  'Knowledge Requirements');
+  _resetHeading('skillsHeading',     'Skills Requirements');
+  _resetHeading('behaviorsHeading',  'Worker Behaviors/Traits');
+  _resetHeading('toolsHeading',      'Tools, Equipment, Supplies and Materials');
+  _resetHeading('trendsHeading',     'Future Trends and Concerns');
+  _resetHeading('acronymsHeading',   'Acronyms');
+  _resetHeading('careerPathHeading', 'Career Path');
+  ['knowledgeInput','skillsInput','behaviorsInput','toolsInput',
+   'trendsInput','acronymsInput','careerPathInput'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const customCont = document.getElementById('customSectionsContainer');
+  if (customCont) customCont.innerHTML = '';
+  appState.customSectionCounter = 0;
+
+  // ── Task Verification ─────────────────────────────────────
+  appState.verificationRatings  = {};
+  appState.taskMetadata         = {};
+  appState.collectionMode       = 'workshop';
+  appState.workflowMode         = 'standard';
+  const modeWorkshop = document.getElementById('mode-workshop');
+  const wfStandard   = document.getElementById('workflow-standard');
+  if (modeWorkshop) modeWorkshop.checked = true;
+  if (wfStandard)   wfStandard.checked   = true;
+  const verCont = document.getElementById('verificationAccordionContainer');
+  if (verCont) { verCont.innerHTML = ''; verCont.classList.remove('workflow-extended'); }
+  appState.workshopParticipants = 10;
+  appState.workshopCounts       = {};
+  appState.workshopResults      = {};
+  appState.priorityFormula      = 'if';
+  const wp = document.getElementById('workshopParticipants');
+  if (wp) wp.value = 10;
+
+  // ── Dashboard DOM ─────────────────────────────────────────
+  const dbBody = document.getElementById('dashboardTableBody');
+  const dbSum  = document.getElementById('dashboardSummary');
+  if (dbBody) dbBody.innerHTML = '';
+  if (dbSum)  dbSum.innerHTML  = '';
+
+  // ── Live Workshop ─────────────────────────────────────────
+  appState.lwSessionId         = null;
+  appState.lwFinalizedData     = null;
+  appState.lwAggregatedResults = null;
+
+  // ── Decision flags ────────────────────────────────────────
+  appState.verificationDecisionMade = false;
+  appState.clusteringAllowed        = false;
+
+  // ── Clustering / LO / Modules ─────────────────────────────
+  appState.clusteringData       = { availableTasks: [], clusters: [], clusterCounter: 0 };
+  appState.learningOutcomesData = { outcomes: [], outcomeCounter: 0 };
+  appState.moduleMappingData    = { modules: [], moduleCounter: 0 };
+}
+
 // ── Clear Current Tab ─────────────────────────────────────────
 
 export function clearCurrentTab(tabId) {
