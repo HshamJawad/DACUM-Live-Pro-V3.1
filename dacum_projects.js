@@ -245,6 +245,30 @@ export function getProjects() {
   return _loadProjects();
 }
 
+
+// ── Delete Active Project ─────────────────────────────────────
+
+export function deleteActiveProject() {
+  const id = _getActive();
+  if (!id) {
+    showStatus('No active project to delete.', 'error');
+    return;
+  }
+  const projects = _loadProjects();
+  const project  = projects.find(p => p.id === id);
+  if (!project) {
+    showStatus('Active project not found.', 'error');
+    return;
+  }
+  const confirmed = confirm(
+    `Are you sure you want to delete "${project.name}"?
+
+This action cannot be undone.`
+  );
+  if (!confirmed) return;
+  deleteProject(id);
+}
+
 export function getActiveProjectId() {
   return _getActive();
 }
