@@ -26,6 +26,7 @@ let _searchQuery = '';
 // ── Public API ────────────────────────────────────────────────
 
 export function createProject(name) {
+  hideWelcomeOverlay();   // dismiss welcome screen if visible
   const label    = (name || '').trim() || 'Untitled DACUM Project';
   const projects = _loadProjects();
   const id       = `project_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -43,7 +44,7 @@ export function createProject(name) {
   _saveProjects(projects);
   _setActive(id);
   renderProjectsSidebar();
-  showStatus(window.i18n ? window.i18n.tf('msgProjectCreated', {name: label}) : `✅ Project "${label}" created`, 'success');
+  showStatus(`✅ Project "${label}" created`, 'success');
   return id;
 }
 
@@ -168,7 +169,7 @@ function _dutiesArrayToState(dutiesArr) {
 export function loadProject(id) {
   const projects = _loadProjects();
   const project  = projects.find(p => p.id === id);
-  if (!project) { showStatus(window.i18n ? window.i18n.t('msgProjectNotFound') : '❌ Project not found', 'error'); return; }
+  if (!project) { showStatus('❌ Project not found', 'error'); return; }
 
   // Auto-save current project before switching
   saveCurrentProject();
@@ -196,7 +197,7 @@ export function loadProject(id) {
     document.dispatchEvent(new CustomEvent('dacum:project-loaded', { detail: { projectId: id } }));
   } catch(e) {}
 
-  showStatus(window.i18n ? window.i18n.tf('msgProjectLoaded', {name: project.name}) : `📂 Loaded: "${project.name}"`, 'success');
+  showStatus(`📂 Loaded: "${project.name}"`, 'success');
 }
 
 export function saveCurrentProject() {
@@ -219,7 +220,7 @@ export function renameProject(id, newName) {
   project.name = label;
   _saveProjects(projects);
   renderProjectsSidebar();
-  showStatus(window.i18n ? window.i18n.tf('msgProjectRenamed', {name: label}) : `✏️ Renamed to "${label}"`, 'success');
+  showStatus(`✏️ Renamed to "${label}"`, 'success');
 }
 
 export function deleteProject(id) {
@@ -235,45 +236,126 @@ export function deleteProject(id) {
       loadProject(projects[projects.length - 1].id);
     } else {
       _setActive(null);
+      renderProjectsSidebar();
+      // Signal events.js to silently reset the DOM (no confirm dialog)
+      document.dispatchEvent(new CustomEvent('dacum:last-project-deleted'));
+      showWelcomeOverlay();
     }
   }
   renderProjectsSidebar();
-  showStatus(window.i18n ? window.i18n.t('msgProjectDeleted') : '🗑️ Project deleted', 'success');
+  showStatus(`🗑️ Project deleted`, 'success');
 }
 
 export function getProjects() {
   return _loadProjects();
 }
 
-
-// ── Delete Active Project ─────────────────────────────────────
-
-export function deleteActiveProject() {
-  const id = _getActive();
-  if (!id) {
-    showStatus('No active project to delete.', 'error');
-    return;
-  }
-  const projects = _loadProjects();
-  const project  = projects.find(p => p.id === id);
-  if (!project) {
-    showStatus('Active project not found.', 'error');
-    return;
-  }
-  const confirmed = confirm(
-    `Are you sure you want to delete "${project.name}"?
-
-This action cannot be undone.`
-  );
-  if (!confirmed) return;
-  deleteProject(id);
-}
-
 export function getActiveProjectId() {
   return _getActive();
 }
 
-// ── Sidebar ───────────────────────────────────────────────────
+/**
+ * deleteActiveProject — removes the currently active project card from the sidebar
+ * WITHOUT touching the DOM (caller is responsible for having cleared the DOM first).
+ * Shows the welcome overlay afterwards.
+ * Called by events.js after a confirmed clearAll().
+ */
+export function deleteActiveProject() {
+  const id = _getActive();
+  if (id) {
+    let projects = _loadProjects();
+    projects = projects.filter(p => p.id !== id);
+    _saveProjects(projects);
+    _setActive(null);
+  }
+  renderProjectsSidebar();
+  showWelcomeOverlay();
+}
+
+/**
+ * showWelcomeOverlay — full-screen overlay prompting the user to create a project.
+ * Automatically dismissed when createProject() succeeds.
+ */
+export function showWelcomeOverlay() {
+  hideWelcomeOverlay();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'dacumWelcomeOverlay';
+  overlay.style.cssText =
+    'position:fixed;inset:0;z-index:900;display:flex;align-items:center;' +
+    'justify-content:center;background:rgba(15,23,42,0.90);' +
+    'backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);' +
+    'animation:dacumWelcomeFadeIn 0.25s ease;';
+
+  overlay.innerHTML = `
+    <div style="
+      background:#1e1e2e;
+      border:1px solid #313244;
+      border-radius:20px;
+      max-width:460px;
+      width:90%;
+      padding:44px 40px 36px;
+      text-align:center;
+      box-shadow:0 32px 80px rgba(0,0,0,0.55);
+      font-family:'Segoe UI',system-ui,sans-serif;
+      animation:dacumWelcomeSlideIn 0.28s cubic-bezier(.16,1,.3,1);
+    ">
+      <div style="font-size:3.2em;line-height:1;margin-bottom:16px;">📋</div>
+      <h2 style="
+        color:#cba6f7;font-size:1.45em;margin:0 0 12px;
+        font-weight:800;letter-spacing:-0.01em;
+      ">Welcome to DACUM Live Pro</h2>
+      <p style="
+        color:#a6adc8;font-size:0.91em;line-height:1.75;margin:0 0 8px;
+      ">Every analysis begins with a <strong style="color:#cdd6f4;">project</strong>.</p>
+      <p style="
+        color:#a6adc8;font-size:0.91em;line-height:1.75;margin:0 0 32px;
+      ">Click the button below to create your first project —<br>
+      this is <strong style="color:#cdd6f4;">Step 1</strong> before entering any data.</p>
+
+      <button id="dacumWelcomeNewBtn" style="
+        display:block;width:100%;
+        background:linear-gradient(135deg,#cba6f7 0%,#89b4fa 100%);
+        color:#1e1e2e;border:none;border-radius:12px;
+        padding:15px 28px;font-size:1.05em;font-weight:800;
+        cursor:pointer;letter-spacing:0.01em;
+        box-shadow:0 4px 20px rgba(203,166,247,0.3);
+        transition:opacity 0.15s,transform 0.1s;
+      "
+      onmouseover="this.style.opacity='0.88'"
+      onmouseout="this.style.opacity='1'"
+      onmousedown="this.style.transform='scale(0.97)'"
+      onmouseup="this.style.transform='scale(1)'">
+        + &nbsp;Create New Project
+      </button>
+
+      <p style="color:#45475a;font-size:0.76em;margin:20px 0 0;line-height:1.6;">
+        Tip: You can also import an existing project using the
+        <strong style="color:#6c7086;">Load JSON</strong> button in the toolbar.
+      </p>
+    </div>`;
+
+  if (!document.getElementById('dacumWelcomeStyles')) {
+    const s = document.createElement('style');
+    s.id = 'dacumWelcomeStyles';
+    s.textContent =
+      '@keyframes dacumWelcomeFadeIn  { from{opacity:0} to{opacity:1} }' +
+      '@keyframes dacumWelcomeSlideIn { from{transform:translateY(-18px);opacity:0} to{transform:translateY(0);opacity:1} }';
+    document.head.appendChild(s);
+  }
+
+  document.body.appendChild(overlay);
+
+  document.getElementById('dacumWelcomeNewBtn').addEventListener('click', () => {
+    const name = prompt('Project name:', `DACUM Project ${_loadProjects().length + 1}`);
+    if (name !== null) createProject(name);
+  });
+}
+
+function hideWelcomeOverlay() {
+  const el = document.getElementById('dacumWelcomeOverlay');
+  if (el) el.remove();
+}
 
 /** Inject sidebar HTML into the page (call once from app.js). */
 export function initProjectsSidebar() {
@@ -345,6 +427,11 @@ export function initProjectsSidebar() {
 
   _positionToggle();
   renderProjectsSidebar();
+
+  // Show welcome overlay on first open if no projects exist yet
+  if (_loadProjects().length === 0) {
+    showWelcomeOverlay();
+  }
 }
 
 /** Re-render the project list cards. */
@@ -640,7 +727,7 @@ function _loadProjects() {
 function _saveProjects(list) {
   try { localStorage.setItem(LS_PROJECTS, JSON.stringify(list)); }
   catch {
-    showStatus(window.i18n ? window.i18n.t('msgStorageFull') : '⚠️ Storage full — oldest project removed.', 'error');
+    showStatus('⚠️ Storage full — oldest project removed.', 'error');
     list.splice(0, 1);
     try { localStorage.setItem(LS_PROJECTS, JSON.stringify(list)); } catch {}
   }

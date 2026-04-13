@@ -80,8 +80,24 @@ export function clearAll() {
     `This action cannot be undone.\n` +
     `Are you sure you want to continue?`;
 
-  if (!confirm(message)) return;
+  if (!confirm(message)) return false;
 
+  _doClear();
+  showStatus('✅ All data cleared successfully. Ready for a new DACUM session.', 'success');
+  return true;
+}
+
+/**
+ * clearAllSilent — same as clearAll but no confirm dialog and no status toast.
+ * Used internally when the last project is deleted (DOM must be reset quietly).
+ */
+export function clearAllSilent() {
+  _doClear();
+}
+
+// ── Internal DOM reset (shared by clearAll and clearAllSilent) ─
+
+function _doClear() {
   // ── Chart Info ────────────────────────────────────────────
   ['dacumDate','producedFor','producedBy','occupationTitle','jobTitle',
    'sector','context','venue','facilitators','observers','panelMembers'].forEach(id => {
@@ -203,87 +219,6 @@ export function clearAll() {
   const infoCont = document.getElementById('info-tab');
   if (infoTab)  infoTab.classList.add('active');
   if (infoCont) infoCont.classList.add('active');
-
-  showStatus(window.i18n ? window.i18n.t('msgClearAll') : '✅ All data cleared successfully.', 'success');
-}
-
-
-// ── Silent clear (no confirm dialog) — used by project switching ──
-
-export function clearAllSilent() {
-  // ── Chart Info ────────────────────────────────────────────
-  ['dacumDate','producedFor','producedBy','occupationTitle','jobTitle',
-   'sector','context','venue','facilitators','observers','panelMembers'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-
-  appState.producedForImage = null;
-  appState.producedByImage  = null;
-  _resetImagePreview('producedFor');
-  _resetImagePreview('producedBy');
-
-  // ── Duties ────────────────────────────────────────────────
-  appState.dutiesData = [];
-  appState.dutyCount  = 0;
-  appState.taskCounts = {};
-  addDuty();
-  addTask(`duty_${appState.dutyCount}`);
-
-  // ── Additional Info ───────────────────────────────────────
-  _resetHeading('knowledgeHeading',  'Knowledge Requirements');
-  _resetHeading('skillsHeading',     'Skills Requirements');
-  _resetHeading('behaviorsHeading',  'Worker Behaviors/Traits');
-  _resetHeading('toolsHeading',      'Tools, Equipment, Supplies and Materials');
-  _resetHeading('trendsHeading',     'Future Trends and Concerns');
-  _resetHeading('acronymsHeading',   'Acronyms');
-  _resetHeading('careerPathHeading', 'Career Path');
-  ['knowledgeInput','skillsInput','behaviorsInput','toolsInput',
-   'trendsInput','acronymsInput','careerPathInput'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  const customCont = document.getElementById('customSectionsContainer');
-  if (customCont) customCont.innerHTML = '';
-  appState.customSectionCounter = 0;
-
-  // ── Task Verification ─────────────────────────────────────
-  appState.verificationRatings  = {};
-  appState.taskMetadata         = {};
-  appState.collectionMode       = 'workshop';
-  appState.workflowMode         = 'standard';
-  const modeWorkshop = document.getElementById('mode-workshop');
-  const wfStandard   = document.getElementById('workflow-standard');
-  if (modeWorkshop) modeWorkshop.checked = true;
-  if (wfStandard)   wfStandard.checked   = true;
-  const verCont = document.getElementById('verificationAccordionContainer');
-  if (verCont) { verCont.innerHTML = ''; verCont.classList.remove('workflow-extended'); }
-  appState.workshopParticipants = 10;
-  appState.workshopCounts       = {};
-  appState.workshopResults      = {};
-  appState.priorityFormula      = 'if';
-  const wp = document.getElementById('workshopParticipants');
-  if (wp) wp.value = 10;
-
-  // ── Dashboard DOM ─────────────────────────────────────────
-  const dbBody = document.getElementById('dashboardTableBody');
-  const dbSum  = document.getElementById('dashboardSummary');
-  if (dbBody) dbBody.innerHTML = '';
-  if (dbSum)  dbSum.innerHTML  = '';
-
-  // ── Live Workshop ─────────────────────────────────────────
-  appState.lwSessionId         = null;
-  appState.lwFinalizedData     = null;
-  appState.lwAggregatedResults = null;
-
-  // ── Decision flags ────────────────────────────────────────
-  appState.verificationDecisionMade = false;
-  appState.clusteringAllowed        = false;
-
-  // ── Clustering / LO / Modules ─────────────────────────────
-  appState.clusteringData       = { availableTasks: [], clusters: [], clusterCounter: 0 };
-  appState.learningOutcomesData = { outcomes: [], outcomeCounter: 0 };
-  appState.moduleMappingData    = { modules: [], moduleCounter: 0 };
 }
 
 // ── Clear Current Tab ─────────────────────────────────────────
@@ -301,7 +236,7 @@ export function clearCurrentTab(tabId) {
     appState.producedByImage  = null;
     _resetImagePreview('producedFor');
     _resetImagePreview('producedBy');
-    showStatus(window.i18n ? window.i18n.t('msgClearChartInfo') : 'Chart Info cleared!', 'success');
+    showStatus('Chart Info cleared!', 'success');
 
   } else if (tabId === 'duties-tab') {
     document.getElementById('dutiesContainer').innerHTML = '';
@@ -309,7 +244,7 @@ export function clearCurrentTab(tabId) {
     appState.taskCounts = {};
     addDuty();
     addTask(`duty_${appState.dutyCount}`);
-    showStatus(window.i18n ? window.i18n.t('msgClearDuties') : 'Duties & Tasks cleared!', 'success');
+    showStatus('Duties & Tasks cleared!', 'success');
 
   } else if (tabId === 'additional-info-tab') {
     ['knowledgeInput','skillsInput','behaviorsInput','toolsInput',
@@ -320,7 +255,7 @@ export function clearCurrentTab(tabId) {
     document.getElementById('customSectionsContainer').innerHTML = '';
     appState.customSectionCounter = 0;
     resetSkillsLevel(false); // false = no confirm
-    showStatus(window.i18n ? window.i18n.t('msgClearAdditional') : 'Additional Info cleared!', 'success');
+    showStatus('Additional Info cleared!', 'success');
 
   } else if (tabId === 'verification-tab') {
     appState.verificationRatings = {};
@@ -340,25 +275,25 @@ export function clearCurrentTab(tabId) {
     if (btnLW) btnLW.disabled = false;
     if (btnBP) btnBP.disabled = false;
     if (btnRD) btnRD.style.display = 'none';
-    showStatus(window.i18n ? window.i18n.t('msgClearVerification') : 'Task Verification cleared!', 'success');
+    showStatus('Task Verification cleared!', 'success');
 
   } else if (tabId === 'clustering-tab') {
     appState.clusteringData = { availableTasks: [], clusters: [], clusterCounter: 0 };
     renderAvailableTasks();
     renderClusters();
-    showStatus(window.i18n ? window.i18n.t('msgClearClustering') : 'Competency Clusters cleared!', 'success');
+    showStatus('Competency Clusters cleared!', 'success');
 
   } else if (tabId === 'learning-outcomes-tab') {
     appState.learningOutcomesData = { outcomes: [], outcomeCounter: 0 };
     renderLearningOutcomes();
     renderPCSourceList();
-    showStatus(window.i18n ? window.i18n.t('msgClearLO') : 'Learning Outcomes cleared!', 'success');
+    showStatus('Learning Outcomes cleared!', 'success');
 
   } else if (tabId === 'module-mapping-tab') {
     appState.moduleMappingData = { modules: [], moduleCounter: 0 };
     renderModules();
     renderModuleLoList();
-    showStatus(window.i18n ? window.i18n.t('msgClearModule') : 'Module Mapping cleared!', 'success');
+    showStatus('Module Mapping cleared!', 'success');
   }
 }
 
@@ -369,7 +304,7 @@ export async function generateAIDacum() {
 
   const usageStatus = checkUsageLimit();
   if (!usageStatus.allowed) {
-    showStatus(window.i18n ? window.i18n.tf('msgAiLimitReached', {n: usageStatus.count}) : `❌ Daily limit reached (${usageStatus.count} generations). Try again tomorrow!`, 'error');
+    showStatus(`❌ Daily limit reached (${usageStatus.count} generations). Try again tomorrow!`, 'error');
     return;
   }
 
@@ -379,7 +314,7 @@ export async function generateAIDacum() {
   const context         = document.getElementById('context').value.trim();
 
   if (!occupationTitle || !jobTitle) {
-    showStatus(window.i18n ? window.i18n.t('msgAiNeedTitles') : 'Please enter both Occupation Title and Job Title before generating AI draft', 'error');
+    showStatus('Please enter both Occupation Title and Job Title before generating AI draft', 'error');
     return;
   }
 
@@ -389,7 +324,7 @@ export async function generateAIDacum() {
 
   if (hasContent) {
     if (!confirm('⚠️ AI GENERATION WILL REPLACE ALL EXISTING DUTIES AND TASKS\n\nClick OK to continue, or Cancel to keep your current work.')) {
-      showStatus(window.i18n ? window.i18n.t('msgAiCancelled') : 'AI generation cancelled. Your existing duties are preserved.', 'error');
+      showStatus('AI generation cancelled. Your existing duties are preserved.', 'error');
       return;
     }
   }
@@ -529,13 +464,107 @@ Generate the DACUM draft now in valid JSON format only.`;
 
     hideLoadingModal();
     incrementUsage();
-    showStatus(window.i18n ? window.i18n.tf('msgAiSuccess', {n: dacumData.duties.length}) : `✓ AI draft generated successfully! ${dacumData.duties.length} duties with tasks created.`, 'success');
+    showStatus(`✓ AI draft generated successfully! ${dacumData.duties.length} duties with tasks created.`, 'success');
 
   } catch (error) {
     hideLoadingModal();
     console.error('Error generating AI DACUM:', error);
-    showStatus(window.i18n ? window.i18n.tf('msgAiError', {msg: error.message}) : `Error: ${error.message}. Check browser console for details.`, 'error');
+    showStatus('AI generation failed. See the error dialog for details.', 'error');
+    _showAIErrorModal(error.message || String(error));
   }
+}
+
+// ── AI Error Modal ───────────────────────────────────────────
+
+function _showAIErrorModal(errorMessage) {
+  const existing = document.getElementById('aiErrorModal');
+  if (existing) existing.remove();
+
+  const isOffline = /Failed to fetch|NetworkError|network|ECONNREFUSED|ERR_CONNECTION|ERR_NAME_NOT_RESOLVED|503|502/i.test(errorMessage);
+
+  const modal = document.createElement('div');
+  modal.id = 'aiErrorModal';
+  modal.setAttribute('role', 'alertdialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.style.cssText =
+    'position:fixed;inset:0;z-index:999999;display:flex;align-items:center;' +
+    'justify-content:center;padding:20px;background:rgba(0,0,0,0.55);' +
+    'backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);' +
+    'animation:aiErrFadeIn 0.2s ease';
+
+  const icon   = isOffline ? '\uD83D\uDD0C' : '\u26A0\uFE0F';
+  const title  = isOffline ? 'AI Service Unavailable' : 'AI Generation Failed';
+  const sub    = isOffline ? 'Backend server unreachable' : 'Check connection and try again';
+  const hdrBg  = isOffline
+    ? 'linear-gradient(135deg,#fff7ed,#ffedd5)'
+    : 'linear-gradient(135deg,#fef2f2,#fee2e2)';
+  const hdrBdr = isOffline ? '#fed7aa' : '#fecaca';
+  const hdrClr = isOffline ? '#9a3412' : '#991b1b';
+  const subClr = isOffline ? '#c2410c' : '#b91c1c';
+
+  const bodyText = isOffline
+    ? 'The AI backend server is currently offline or unreachable.<br><br>' +
+      'The AI generation service requires an active Railway backend. ' +
+      'You can still use the tool manually to add duties and tasks.'
+    : 'An error occurred while generating the AI draft:<br><br>' +
+      '<code style="font-size:0.82em;background:#f1f5f9;padding:4px 8px;' +
+      'border-radius:4px;word-break:break-all;">' +
+      (errorMessage || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</code>';
+
+  const offlineTips = isOffline
+    ? '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;' +
+      'padding:12px 14px;margin-bottom:16px;">' +
+      '<p style="margin:0;font-size:0.82em;color:#15803d;font-weight:600;">' +
+      '\u2705 What you can do instead:</p>' +
+      '<ul style="margin:6px 0 0;padding-left:18px;font-size:0.82em;color:#166534;line-height:1.8;">' +
+      '<li>Add duties and tasks manually</li>' +
+      '<li>Use the + Add Duty / + Add Task buttons</li>' +
+      '<li>Import a saved JSON project file</li></ul></div>'
+    : '';
+
+  modal.innerHTML =
+    '<div style="background:#fff;border-radius:16px;max-width:420px;width:100%;' +
+    'box-shadow:0 24px 60px rgba(0,0,0,0.35);overflow:hidden;' +
+    'font-family:\'Segoe UI\',system-ui,sans-serif;animation:aiErrSlideIn 0.22s ease;">' +
+      '<div style="padding:20px 22px 16px;display:flex;align-items:center;gap:12px;' +
+      'background:' + hdrBg + ';border-bottom:1px solid ' + hdrBdr + ';">' +
+        '<span style="font-size:1.8em;line-height:1;">' + icon + '</span>' +
+        '<div>' +
+          '<p style="margin:0;font-size:1em;font-weight:800;color:' + hdrClr + ';">' + title + '</p>' +
+          '<p style="margin:2px 0 0;font-size:0.78em;color:' + subClr + ';">' + sub + '</p>' +
+        '</div>' +
+      '</div>' +
+      '<div style="padding:18px 22px 20px;">' +
+        '<p style="margin:0 0 16px;font-size:0.88em;color:#374151;line-height:1.6;">' + bodyText + '</p>' +
+        offlineTips +
+        '<div style="display:flex;justify-content:flex-end;">' +
+          '<button id="aiErrorModalClose" style="padding:9px 22px;background:#667eea;' +
+          'color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;' +
+          'cursor:pointer;transition:background 0.15s;"' +
+          ' onmouseover="this.style.background=\'#5a67d8\'"' +
+          ' onmouseout="this.style.background=\'#667eea\'">Got it</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  if (!document.getElementById('aiErrStyles')) {
+    const s = document.createElement('style');
+    s.id = 'aiErrStyles';
+    s.textContent =
+      '@keyframes aiErrFadeIn  { from{opacity:0} to{opacity:1} }' +
+      '@keyframes aiErrSlideIn { from{transform:translateY(-14px);opacity:0}' +
+      ' to{transform:translateY(0);opacity:1} }';
+    document.head.appendChild(s);
+  }
+
+  document.body.appendChild(modal);
+
+  function _close() { modal.remove(); }
+  document.getElementById('aiErrorModalClose').addEventListener('click', _close);
+  modal.addEventListener('click', function(e) { if (e.target === modal) _close(); });
+  document.addEventListener('keydown', function _esc(e) {
+    if (e.key === 'Escape') { _close(); document.removeEventListener('keydown', _esc); }
+  });
 }
 
 // ── Private helpers ───────────────────────────────────────────

@@ -6,10 +6,6 @@
 import { appState } from './state.js';
 import { showStatus, escapeHtml } from './renderer.js';
 
-// i18n export helper
-const _e = key => (window.i18n ? window.i18n.t(key) : key);
-
-
 export async function exportTaskVerificationWord() {
             try {
                 // Check if we have Task Verification data
@@ -45,7 +41,7 @@ export async function exportTaskVerificationWord() {
                 children.push(new Paragraph({
                     children: [
                         new TextRun({
-                            text: _e('expTaskVerification'),
+                            text: 'Task Verification & Training Priority Analysis',
                             bold: true,
                             size: 32,
                         }),
@@ -311,10 +307,10 @@ export async function exportTaskVerificationWord() {
                 const dutyTableRows = [
                     new TableRow({
                         children: [
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: _e('expDutyTitle'), bold: true })], alignment: AlignmentType.LEFT, bidirectional: false })], shading: { fill: '667eea' } }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: _e('expTasks'), bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: _e('expAvgPriority'), bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: _e('expTrainingLoad'), bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Duty Title', bold: true })], alignment: AlignmentType.LEFT, bidirectional: false })], shading: { fill: '667eea' } }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Tasks', bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Avg Priority', bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Training Load', bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
                         ],
                     })
                 ];
@@ -401,7 +397,7 @@ export async function exportTaskVerificationWord() {
                 document.body.removeChild(link);
                 URL.revokeObjectURL(url);
                 
-                showStatus(window.i18n ? window.i18n.t('msgTVWordExported') : 'Task Verification Word document exported successfully! ✓', 'success');
+                showStatus('Task Verification Word document exported successfully! ✓', 'success');
 
             } catch (error) {
                 console.error('Error generating Task Verification Word document:', error);
@@ -730,7 +726,7 @@ export async function exportToWord() {
                     children: [
                         new PageBreak(),
                         new TextRun({
-                            text: _e('expDutiesAndTasks'),
+                            text: 'Duties and Tasks',
                             bold: true,
                             size: 28, // 14pt
                         }),
@@ -874,7 +870,7 @@ export async function exportToWord() {
                     children: [
                         new PageBreak(),
                         new TextRun({
-                            text: _e('expAdditionalInfo'),
+                            text: 'Additional Information',
                             bold: true,
                             size: 24, // 12pt
                         }),
@@ -1116,8 +1112,10 @@ export async function exportToWord() {
 
                 // ============ SKILLS LEVEL MATRIX EXPORT ============
                 // Check if there's any meaningful data in Skills Level Matrix
-                const hasSkillsLevelData = appState.skillsLevelData && appState.skillsLevelData.some(category => 
-                    category.category.trim() !== '' || category.competencies.some(comp => comp.text.trim() !== '')
+                const hasSkillsLevelData = appState.skillsLevelData?.some(category =>
+                    category.competencies.some(comp =>
+                        Object.values(comp.levels).some(v => v === true)
+                    )
                 );
 
                 if (hasSkillsLevelData) {
@@ -1175,7 +1173,7 @@ export async function exportToWord() {
                                         new Paragraph({
                                             children: [
                                                 new TextRun({
-                                                    text: _e('expCompetency'),
+                                                    text: 'Competency',
                                                     bold: true,
                                                     size: 22,
                                                 }),
@@ -1194,7 +1192,7 @@ export async function exportToWord() {
                                         new Paragraph({
                                             children: [
                                                 new TextRun({
-                                                    text: _e('expCraftsman'),
+                                                    text: 'Craftsman/\nSupervisor',
                                                     bold: true,
                                                     size: 20,
                                                 }),
@@ -1213,7 +1211,7 @@ export async function exportToWord() {
                                         new Paragraph({
                                             children: [
                                                 new TextRun({
-                                                    text: _e('expSkilled'),
+                                                    text: 'Skilled',
                                                     bold: true,
                                                     size: 20,
                                                 }),
@@ -1232,7 +1230,7 @@ export async function exportToWord() {
                                         new Paragraph({
                                             children: [
                                                 new TextRun({
-                                                    text: _e('expSemiSkilled'),
+                                                    text: 'Semi-skilled',
                                                     bold: true,
                                                     size: 20,
                                                 }),
@@ -1251,7 +1249,7 @@ export async function exportToWord() {
                                         new Paragraph({
                                             children: [
                                                 new TextRun({
-                                                    text: _e('expFoundation'),
+                                                    text: 'Foundation\nskills',
                                                     bold: true,
                                                     size: 20,
                                                 }),
@@ -1384,7 +1382,7 @@ export async function exportToWord() {
                         children.push(new Paragraph({
                             children: [
                                 new TextRun({
-                                    text: _e('expTaskVerifAppendix'),
+                                    text: 'Task Verification & Training Priority Analysis (Appendix)',
                                     bold: true,
                                     size: 32, // 16pt
                                 }),
@@ -1615,10 +1613,10 @@ export async function exportToWord() {
                         const dutyTableRows = [
                             new TableRow({
                                 children: [
-                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: _e('expDutyTitle'), bold: true })], alignment: AlignmentType.LEFT, bidirectional: false })], shading: { fill: '667eea' } }),
-                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: _e('expTasks'), bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
-                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: _e('expAvgPriority'), bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
-                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: _e('expTrainingLoad'), bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
+                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Duty Title', bold: true })], alignment: AlignmentType.LEFT, bidirectional: false })], shading: { fill: '667eea' } }),
+                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Tasks', bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
+                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Avg Priority', bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
+                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Training Load', bold: true })], alignment: AlignmentType.CENTER, bidirectional: false })], shading: { fill: '667eea' } }),
                                 ],
                             })
                         ];
@@ -1685,7 +1683,7 @@ export async function exportToWord() {
                     children.push(new Paragraph({
                         children: [
                             new TextRun({
-                                text: _e('expPostVoteResults'),
+                                text: 'DACUM Live Pro - Verified (Post-Vote) Results (Appendix)',
                                 bold: true,
                                 size: 32,
                             }),
@@ -1788,7 +1786,7 @@ export async function exportToWord() {
                     children.push(new Paragraph({
                         children: [
                             new TextRun({
-                                text: _e('expClusters'),
+                                text: 'Competency Clusters',
                                 bold: true,
                                 size: 32, // 16pt
                             }),
@@ -1909,7 +1907,7 @@ export async function exportToWord() {
                     children.push(new Paragraph({
                         children: [
                             new TextRun({
-                                text: _e('expLearningOutcomes'),
+                                text: 'Learning Outcomes',
                                 bold: true,
                                 size: 32, // 16pt
                             }),
@@ -2019,7 +2017,7 @@ export async function exportToWord() {
                     children.push(new Paragraph({
                         children: [
                             new TextRun({
-                                text: _e('expModuleMapping'),
+                                text: 'Module Mapping',
                                 bold: true,
                                 size: 32, // 16pt
                             }),
@@ -2047,7 +2045,7 @@ export async function exportToWord() {
                         children.push(new Paragraph({
                             children: [
                                 new TextRun({
-                                    text: _e('expLearningOutcomes') + ':',
+                                    text: 'Learning Outcomes:',
                                     bold: true,
                                     size: 24, // 12pt
                                 }),
@@ -2188,7 +2186,7 @@ export function exportTaskVerificationPDF() {
         // Title Page
         pdf.setFontSize(18);
         pdf.setFont(undefined, 'bold');
-        pdf.text(_e('expTaskVerification'), pageWidth / 2, yPos, { align: 'center' });
+        pdf.text('Task Verification & Training Priority Analysis', pageWidth / 2, yPos, { align: 'center' });
         yPos += 12;
         
         pdf.setFontSize(14);
@@ -2210,7 +2208,7 @@ export function exportTaskVerificationPDF() {
         // Methodology Summary
         pdf.setFontSize(14);
         pdf.setFont(undefined, 'bold');
-        pdf.text(_e('expMethodologySummary'), margin, yPos);
+        pdf.text('Methodology Summary', margin, yPos);
         yPos += 8;
         
         pdf.setFontSize(11);
@@ -2227,7 +2225,7 @@ export function exportTaskVerificationPDF() {
         // Priority Rankings Table
         pdf.setFontSize(14);
         pdf.setFont(undefined, 'bold');
-        pdf.text(_e('expPriorityRankings'), margin, yPos);
+        pdf.text('Priority Rankings', margin, yPos);
         yPos += 8;
         
         // Get and sort results
@@ -2321,7 +2319,7 @@ export function exportTaskVerificationPDF() {
         
         pdf.setFontSize(14);
         pdf.setFont(undefined, 'bold');
-        pdf.text(_e('expDutyLevelSummary'), margin, yPos);
+        pdf.text('Duty-Level Summary', margin, yPos);
         yPos += 5;
         
         pdf.setFontSize(9);
@@ -2386,7 +2384,7 @@ export function exportTaskVerificationPDF() {
         
         // Duty table headers
         const dutyColWidths = [80, 30, 40, 45];
-        const dutyHeaders = [_e('expDutyTitle'), _e('expTasks'), _e('expAvgPriority'), _e('expTrainingLoad')];
+        const dutyHeaders = ['Duty Title', 'Tasks', 'Avg Priority', 'Training Load'];
         
         pdf.setFontSize(9);
         pdf.setFont(undefined, 'bold');
@@ -3042,8 +3040,10 @@ export function exportToPDF() {
         });
         
         // ============ SKILLS LEVEL MATRIX (PDF EXPORT) ============
-        const hasSkillsLevelData = appState.skillsLevelData && appState.skillsLevelData.some(category => 
-            category.category.trim() !== '' || category.competencies.some(comp => comp.text.trim() !== '')
+        const hasSkillsLevelData = appState.skillsLevelData?.some(category =>
+            category.competencies.some(comp =>
+                Object.values(comp.levels).some(v => v === true)
+            )
         );
 
         if (hasSkillsLevelData) {
@@ -3083,7 +3083,7 @@ export function exportToPDF() {
                 const colWidth = (pageWidth - (margin * 2)) / 5;
                 pdf.setFillColor(245, 245, 245);
                 pdf.rect(margin, yPos - 4, pageWidth - (margin * 2), 6, 'F');
-                pdf.text(_e('expCompetency'), margin + 2, yPos);
+                pdf.text('Competency', margin + 2, yPos);
                 pdf.text('Craftsman', margin + colWidth * 1 + 2, yPos);
                 pdf.text('Skilled', margin + colWidth * 2 + 2, yPos);
                 pdf.text('Semi-skilled', margin + colWidth * 3 + 2, yPos);
@@ -3105,7 +3105,7 @@ export function exportToPDF() {
                             pdf.setFont(undefined, 'bold');
                             pdf.setFillColor(245, 245, 245);
                             pdf.rect(margin, yPos - 4, pageWidth - (margin * 2), 6, 'F');
-                            pdf.text(_e('expCompetency'), margin + 2, yPos);
+                            pdf.text('Competency', margin + 2, yPos);
                             pdf.text('Craftsman', margin + colWidth * 1 + 2, yPos);
                             pdf.text('Skilled', margin + colWidth * 2 + 2, yPos);
                             pdf.text('Semi-skilled', margin + colWidth * 3 + 2, yPos);
@@ -3169,13 +3169,13 @@ export function exportToPDF() {
                 // Appendix title
                 pdf.setFontSize(16);
                 pdf.setFont(undefined, 'bold');
-                pdf.text(_e('expTaskVerifAppendix'), pageWidth / 2, yPos, { align: 'center' });
+                pdf.text('Task Verification & Training Priority Analysis (Appendix)', pageWidth / 2, yPos, { align: 'center' });
                 yPos += 12;
                 
                 // Methodology Summary
                 pdf.setFontSize(14);
                 pdf.setFont(undefined, 'bold');
-                pdf.text(_e('expMethodologySummary'), margin, yPos);
+                pdf.text('Methodology Summary', margin, yPos);
                 yPos += 8;
                 
                 pdf.setFontSize(11);
@@ -3192,7 +3192,7 @@ export function exportToPDF() {
                 // Priority Rankings Table
                 pdf.setFontSize(14);
                 pdf.setFont(undefined, 'bold');
-                pdf.text(_e('expPriorityRankings'), margin, yPos);
+                pdf.text('Priority Rankings', margin, yPos);
                 yPos += 8;
                 
                 // Get sorted results
@@ -3288,7 +3288,7 @@ export function exportToPDF() {
                 
                 pdf.setFontSize(14);
                 pdf.setFont(undefined, 'bold');
-                pdf.text(_e('expDutyLevelSummary'), margin, yPos);
+                pdf.text('Duty-Level Summary', margin, yPos);
                 yPos += 5;
                 
                 pdf.setFontSize(9);
@@ -3353,7 +3353,7 @@ export function exportToPDF() {
                 
                 // Duty table headers
                 const dutyColWidths = [80, 30, 40, 45];
-                const dutyHeaders = [_e('expDutyTitle'), _e('expTasks'), _e('expAvgPriority'), _e('expTrainingLoad')];
+                const dutyHeaders = ['Duty Title', 'Tasks', 'Avg Priority', 'Training Load'];
                 
                 pdf.setFontSize(9);
                 pdf.setFont(undefined, 'bold');
@@ -3424,7 +3424,7 @@ export function exportToPDF() {
             // Appendix title
             pdf.setFontSize(16);
             pdf.setFont(undefined, 'bold');
-            pdf.text(_e('expPostVoteResults'), pageWidth / 2, yPos, { align: 'center' });
+            pdf.text('DACUM Live Pro - Verified (Post-Vote) Results (Appendix)', pageWidth / 2, yPos, { align: 'center' });
             yPos += 12;
             
             // Metadata
@@ -3509,7 +3509,7 @@ export function exportToPDF() {
             
             pdf.setFontSize(16);
             pdf.setFont(undefined, 'bold');
-            pdf.text(_e('expClusters'), pageWidth / 2, yPos, { align: 'center' });
+            pdf.text('Competency Clusters', pageWidth / 2, yPos, { align: 'center' });
             yPos += 10;
             
             appState.clusteringData.clusters.forEach((cluster, clusterIndex) => {
@@ -3631,7 +3631,7 @@ export function exportToPDF() {
             
             pdf.setFontSize(16);
             pdf.setFont(undefined, 'bold');
-            pdf.text(_e('expLearningOutcomes'), pageWidth / 2, yPos, { align: 'center' });
+            pdf.text('Learning Outcomes', pageWidth / 2, yPos, { align: 'center' });
             yPos += 10;
             
             // Group LOs by cluster
@@ -3733,7 +3733,7 @@ export function exportToPDF() {
             
             pdf.setFontSize(16);
             pdf.setFont(undefined, 'bold');
-            pdf.text(_e('expModuleMapping'), pageWidth / 2, yPos, { align: 'center' });
+            pdf.text('Module Mapping', pageWidth / 2, yPos, { align: 'center' });
             yPos += 10;
             
             appState.moduleMappingData.modules.forEach(module => {
@@ -3751,7 +3751,7 @@ export function exportToPDF() {
                 // Learning Outcomes in this module
                 pdf.setFontSize(12);
                 pdf.setFont(undefined, 'bold');
-                pdf.text(_e('expLearningOutcomes') + ':', margin + 5, yPos);
+                pdf.text('Learning Outcomes:', margin + 5, yPos);
                 yPos += 5;
                 
                 module.learningOutcomes.forEach(lo => {

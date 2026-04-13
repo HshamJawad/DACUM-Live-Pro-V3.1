@@ -162,22 +162,6 @@ export function resetSkillsLevel(withConfirm = true) {
   renderSkillsLevel();
 }
 
-// i18n helper: translate category name if key exists, else return raw
-function _tCat(name) {
-  var keyMap = {
-    'Communication':       'skillCatCommunication',
-    'Teamwork':            'skillCatTeamwork',
-    'Self-marketing':      'skillCatSelfMarketing',
-    'Problem Solving':     'skillCatProblemSolving',
-    'Entrepreneurship':    'skillCatEntrepreneurship',
-    'Computer/ICT skills': 'skillCatICT',
-    'Foreign Languages':   'skillCatLanguages',
-    'Mathematical Skills': 'skillCatMaths',
-  };
-  var k = keyMap[name];
-  return (k && window.i18n) ? window.i18n.t(k) : name;
-}
-
 export function renderSkillsLevel() {
   const container = document.getElementById('skillsLevelContainer');
   if (!container) return;
@@ -187,13 +171,13 @@ export function renderSkillsLevel() {
     html += `
       <div class="skills-level-category">
         <div class="skills-level-category-header">
-          <h4>${_tCat(category.category) || "Category " + category.id}</h4>
+          <h4>Category ${category.id}</h4>
           <button class="btn-remove-category"
             data-action="remove-skills-category" data-cat-index="${categoryIndex}">Remove Category</button>
         </div>
         <input type="text" class="skills-level-category-name"
           placeholder="e.g., Communication, Problem Solving, etc."
-          value="${escapeHtml(_tCat(category.category))}"
+          value="${escapeHtml(category.category)}"
           data-action="update-skills-category-name" data-cat-index="${categoryIndex}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
           <h5 style="margin:0;">Competencies</h5>
