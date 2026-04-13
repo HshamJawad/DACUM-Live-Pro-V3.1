@@ -24,7 +24,7 @@ export function updateCollectionMode() {
     dashboardSection.style.display = 'none';
   }
   loadDutiesForVerification();
-  showStatus(window.i18n ? window.i18n.t(appState.collectionMode === 'workshop' ? 'msgModeWorkshop' : 'msgModeSurvey') : `Data collection mode: ${appState.collectionMode === 'workshop' ? 'Workshop (Facilitated)' : 'Individual / Survey'}`, 'success');
+  showStatus(`Data collection mode: ${appState.collectionMode === 'workshop' ? 'Workshop (Facilitated)' : 'Individual / Survey'}`, 'success');
 }
 
 export function updateWorkflowMode() {
@@ -46,14 +46,14 @@ export function updateWorkflowMode() {
     priorityFormulaSection.style.display =
       (appState.workflowMode === 'standard' && appState.collectionMode === 'workshop') ? 'block' : 'none';
   }
-  showStatus(window.i18n ? window.i18n.t(appState.workflowMode === 'standard' ? 'msgWorkflowStandard' : 'msgWorkflowExtended') : `Workflow mode: ${appState.workflowMode === 'standard' ? 'Standard (DACUM)' : 'Extended (DACUM)'}`, 'success');
+  showStatus(`Workflow mode: ${appState.workflowMode === 'standard' ? 'Standard (DACUM)' : 'Extended (DACUM)'}`, 'success');
 }
 
 export function updateParticipantCount() {
   const input = document.getElementById('workshopParticipants');
   appState.workshopParticipants = parseInt(input.value) || 10;
   validateAndComputeWorkshopResults();
-  showStatus(window.i18n ? window.i18n.tf('msgParticipantsSet', {n: appState.workshopParticipants}) : `Participants set to ${appState.workshopParticipants}. Re-validating all tasks...`, 'success');
+  showStatus(`Participants set to ${appState.workshopParticipants}. Re-validating all tasks...`, 'success');
 }
 
 export function updatePriorityFormula() {
@@ -63,7 +63,7 @@ export function updatePriorityFormula() {
   else if (ifdRadio.checked) appState.priorityFormula = 'ifd';
   validateAndComputeWorkshopResults();
   refreshDashboard();
-  showStatus(window.i18n ? window.i18n.t(appState.priorityFormula === 'if' ? 'msgFormulaIF' : 'msgFormulaIFD') : `Priority formula: ${appState.priorityFormula === 'if' ? 'I × F' : 'I × F × D'}`, 'success');
+  showStatus(`Priority formula: ${appState.priorityFormula === 'if' ? 'I × F' : 'I × F × D'}`, 'success');
 }
 
 export function updateTVExportMode() {
@@ -71,7 +71,7 @@ export function updateTVExportMode() {
   const standaloneRadio = document.getElementById('tvExportStandalone');
   if (appendixRadio && appendixRadio.checked)       appState.tvExportMode = 'appendix';
   else if (standaloneRadio && standaloneRadio.checked) appState.tvExportMode = 'standalone';
-  showStatus(window.i18n ? window.i18n.t(appState.tvExportMode === 'appendix' ? 'msgExportAppendix' : 'msgExportStandalone') : `Export mode: ${appState.tvExportMode === 'appendix' ? 'Include as Appendix' : 'Standalone Report'}`, 'success');
+  showStatus(`Export mode: ${appState.tvExportMode === 'appendix' ? 'Include as Appendix' : 'Standalone Report'}`, 'success');
 }
 
 export function updateTrainingLoadMethod() {
@@ -93,9 +93,9 @@ export function loadDutiesForVerification() {
   if (dutyInputs.length === 0) {
     container.innerHTML = `
       <div class="no-duties-message">
-        <h3>⚠️ ${window.i18n ? window.i18n.t('msgNoDuties') : 'No Duties Found'}</h3>
-        <p>${window.i18n ? window.i18n.t('msgNoDutiesDesc') : 'Please go to the "Duties & Tasks" tab and create duties with tasks first.'}</p>
-        <p style="margin-top:10px;">${window.i18n ? window.i18n.t('msgNoDutiesHint') : 'Once you\'ve added duties and tasks, click the "Refresh Duties & Tasks" button above.'}</p>
+        <h3>⚠️ No Duties Found</h3>
+        <p>Please go to the "Duties & Tasks" tab and create duties with tasks first.</p>
+        <p style="margin-top:10px;">Once you've added duties and tasks, click the "Refresh Duties & Tasks" button above.</p>
       </div>`;
     return;
   }
@@ -125,7 +125,7 @@ export function loadDutiesForVerification() {
   });
 
   attachAccordionListeners();
-  showStatus(window.i18n ? window.i18n.tf('msgLoadedTasks', {d: totalDuties, t: totalTasks}) : `✓ Loaded ${totalDuties} duties with ${totalTasks} tasks for verification`, 'success');
+  showStatus(`✓ Loaded ${totalDuties} duties with ${totalTasks} tasks for verification`, 'success');
 }
 
 // ── Accordion HTML Builder ────────────────────────────────────
@@ -211,30 +211,26 @@ function createDutyAccordion(dutyId, dutyText, tasks) {
       </tr>`;
   }).join('');
 
-  const _th = key => (window.i18n ? window.i18n.t(key) : key);
   const tableHeader = !isExtended && !isWorkshop ? `<tr>
-    <th>${_th('thTask')}</th>
-    <th>${_th('thImportance')}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
-    <th>${_th('thFrequency')}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
-    <th>${_th('thDifficulty')}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
-    <th>${_th('thTaskScore')}</th><th>${_th('thCompletion')}</th></tr>`
+    <th>Task</th><th>Importance<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
+    <th>Frequency<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
+    <th>Learning Difficulty<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
+    <th>Task Score</th><th>Completion</th></tr>`
   : !isExtended && isWorkshop ? `<tr>
-    <th>${_th('thTask')}</th>
-    <th>${_th('thImportanceCounts')}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
-    <th>${_th('thFrequencyCounts')}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
-    <th>${_th('thDifficultyCounts')}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
-    <th>${_th('thMeanImportance')}</th><th>${_th('thMeanFrequency')}</th>
-    <th>${_th('thMeanDifficulty')}</th><th>${_th('thPriorityIndex')}</th></tr>`
+    <th>Task</th><th>Importance Counts<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
+    <th>Frequency Counts<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
+    <th>Difficulty Counts<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
+    <th>Mean<br>Importance</th><th>Mean<br>Frequency</th><th>Mean<br>Difficulty</th><th>Priority<br>Index</th></tr>`
   : `<tr>
-    <th>${_th('thTask')}</th>
-    <th>${isWorkshop ? _th('thImportanceCounts') : _th('thImportance')}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
-    <th>${isWorkshop ? _th('thFrequencyCounts')  : _th('thFrequency')}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
-    <th>${isWorkshop ? _th('thDifficultyCounts') : _th('thDifficulty')}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
-    <th class="extended-only">${_th('thPerforms')}</th>
-    <th class="extended-only">${isWorkshop ? _th('thCriticalityCounts') : 'Criticality'}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
-    <th class="extended-only">${_th('thWeightedScore')}</th>
-    <th class="extended-only">${_th('thPriority')}</th>
-    <th class="extended-only">${_th('thComments')}</th></tr>`;
+    <th>Task</th>
+    <th>${isWorkshop ? 'Importance Counts' : 'Importance'}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
+    <th>${isWorkshop ? 'Frequency Counts' : 'Frequency'}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
+    <th>${isWorkshop ? 'Difficulty Counts' : 'Difficulty'}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
+    <th class="extended-only">Performs?</th>
+    <th class="extended-only">${isWorkshop ? 'Criticality Counts' : 'Criticality'}<br><span style="font-weight:400;font-size:.85em;">(0-3)</span></th>
+    <th class="extended-only">Weighted Score</th>
+    <th class="extended-only">Priority</th>
+    <th class="extended-only">Comments</th></tr>`;
 
   return `
     <div class="duty-accordion">
@@ -688,7 +684,7 @@ function updateDutyLevelSummaryFromSource(resultsSource) {
 }
 
 export function exportDashboard() {
-  if (appState.collectionMode !== 'workshop') { showStatus(window.i18n ? window.i18n.t('msgDashboardCsvOnly') : 'Dashboard export only available in Workshop mode', 'error'); return; }
+  if (appState.collectionMode !== 'workshop') { showStatus('Dashboard export only available in Workshop mode', 'error'); return; }
   const validResults = [];
   Object.keys(appState.workshopResults).forEach(taskKey => {
     const r = appState.workshopResults[taskKey];
@@ -718,7 +714,7 @@ export function exportDashboard() {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  showStatus(window.i18n ? window.i18n.t('msgDashboardExported') : 'Dashboard exported as CSV successfully! ✓', 'success');
+  showStatus('Dashboard exported as CSV successfully! ✓', 'success');
 }
 
 // ── Accordion Listeners ───────────────────────────────────────
