@@ -47,10 +47,46 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════
-   FIX 2 — Hamburger button base style
-   Hidden by default; shown at breakpoints below.
+   FIX 2 — Hamburger button removed from toolbar (Phase 1).
+   Sidebar toggle now lives in .dps-head inside the sidebar.
+   When sidebar is collapsed (dps-force-hidden), a small icon
+   appears in the toolbar left to re-open it.
    ══════════════════════════════════════════════════════════ */
-/* .dtb-hamburger button removed */
+
+/* Re-open button — hidden by default, shown only when sidebar is collapsed */
+#btnReopenSidebar {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.14);
+  border-radius: 7px;
+  color: #cbd5e1;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.13s, color 0.13s;
+  flex-shrink: 0;
+}
+#btnReopenSidebar:hover {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Show when sidebar is force-hidden (desktop collapsed) */
+#dacumAppWrapper:has(#dacumProjectsSidebar.dps-force-hidden) #btnReopenSidebar,
+body:has(#dacumProjectsSidebar.dps-force-hidden) #btnReopenSidebar {
+  display: inline-flex;
+}
+
+/* Fallback class-based show (set by dacum-phase1.js for browsers without :has) */
+#dacumTopToolbar.sidebar-is-hidden #btnReopenSidebar {
+  display: inline-flex;
+}
 
 /* Mobile sidebar overlay backdrop */
 #dpsMobileBackdrop {

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>DACUM Live Pro</title>
+
+    <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#667eea">
     <meta name="mobile-web-app-capable" content="yes">
@@ -11,6 +13,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="DACUM Pro">
     <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Service Worker -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
@@ -21,71 +25,347 @@
         });
       }
     </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
     <link rel="stylesheet" href="dacum-styles.css">
     <link rel="stylesheet" href="dacum-responsive.css">
     <link rel="stylesheet" href="dacum-fixes.css">
     <link rel="stylesheet" href="dacum-typography.css">
+    <link rel="stylesheet" href="tv-refactor.css">
     <style>
+      /* ── #btnSidebarToggle is an invisible sentinel in the toolbar.
+            The visual toggle now lives in .dps-head (sidebar header).
+            dacum-mobile.js still wires toggleSidebar() to this ID.   */
       #btnSidebarToggle {
-        display:inline-flex;align-items:center;justify-content:center;
-        background:#fff;border:1.5px solid #e2e2e4;border-radius:99px;
-        padding:7px 11px;cursor:pointer;flex-shrink:0;
-        box-shadow:0 1px 3px rgba(0,0,0,0.06);
-        transition:background .12s,border-color .12s;color:#444447;
+        /* sentinel — zero size, invisible, non-interactive */
+        position: absolute;
+        pointer-events: none;
+        opacity: 0;
+        width: 0; height: 0;
+        overflow: hidden;
+        padding: 0; border: 0;
       }
-      #btnSidebarToggle:hover{background:#f0f0f2;border-color:#c8c8cc;}
-      #btnSidebarToggle:active{transform:scale(0.97);}
-      #dacumProjectsSidebar.dps-force-hidden{width:0!important;overflow:hidden!important;box-shadow:none!important;min-width:0!important;}
-      #dacumAppWrapper.dps-force-hidden-wrapper>.container{margin-left:0!important;}
-      @media(max-width:900px){
-        #dacumProjectsSidebar{position:fixed!important;top:60px!important;left:0!important;height:calc(100vh - 60px)!important;width:260px!important;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1)!important;z-index:500!important;box-shadow:none!important;}
-        #dacumProjectsSidebar.dps-mobile-open{transform:translateX(0)!important;box-shadow:2px 0 24px rgba(0,0,0,.3)!important;}
-        #dacumAppWrapper>.container,#dacumAppWrapper.dps-force-hidden-wrapper>.container{margin-left:0!important;}
+
+      /* Collapsed sidebar state */
+      #dacumProjectsSidebar.dps-force-hidden {
+        width: 0 !important;
+        overflow: hidden !important;
+        box-shadow: none !important;
+        min-width: 0 !important;
       }
-      @keyframes refine-fade-in{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+      #dacumAppWrapper.dps-force-hidden-wrapper > .container {
+        margin-left: 0 !important;
+      }
+
+      /* Mobile overlay */
+      @media (max-width: 900px) {
+        #dacumProjectsSidebar {
+          position: fixed !important;
+          top: 60px !important;
+          left: 0 !important;
+          height: calc(100vh - 60px) !important;
+          width: 260px !important;
+          transform: translateX(-100%);
+          transition: transform 0.28s cubic-bezier(.4,0,.2,1) !important;
+          z-index: 500 !important;
+          box-shadow: none !important;
+        }
+        #dacumProjectsSidebar.dps-mobile-open {
+          transform: translateX(0) !important;
+          box-shadow: 2px 0 24px rgba(0,0,0,0.3) !important;
+        }
+        #dacumProjectsSidebar.dps-force-hidden {
+          transform: translateX(-100%) !important;
+          width: 260px !important;
+        }
+        #dacumAppWrapper > .container,
+        #dacumAppWrapper.dps-force-hidden-wrapper > .container {
+          margin-left: 0 !important;
+        }
+      }
+
+      @keyframes refine-fade-in {
+        from { opacity:0; transform:translateY(-6px); }
+        to   { opacity:1; transform:translateY(0); }
+      }
+
+      /* ══════════════════════════════════════════════════
+         PHASE 1 — ChatGPT-style sidebar layout
+         ══════════════════════════════════════════════════ */
+
+      /* ── Sidebar becomes flex column ─────────────────── */
+      #dacumProjectsSidebar {
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;   /* head fixed, content scrolls */
+      }
+
+      /* ── Sidebar HEAD (logo + toggle button) ─────────── */
+      .dps-head {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px 0 14px;
+        height: 56px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: inherit;
+      }
+      .dps-head-logo {
+        font-size: 0.8em;
+        font-weight: 700;
+        color: #e2e8f0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+        flex: 1;
+        min-width: 0;
+      }
+      .dps-head-logo small {
+        display: block;
+        font-size: 0.78em;
+        font-weight: 400;
+        color: #94a3b8;
+        margin-top: 1px;
+      }
+      .dps-head-toggle {
+        flex-shrink: 0;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 34px !important;
+        height: 34px !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 6px !important;
+        color: #94a3b8 !important;
+        cursor: pointer;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: background 0.15s, color 0.15s !important;
+      }
+      .dps-head-toggle:hover {
+        background: rgba(255,255,255,0.1) !important;
+        color: #fff !important;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+      .dps-head-toggle:active { transform: scale(0.93) !important; box-shadow: none !important; }
+
+      /* ── Scrollable sidebar content area ─────────────── */
+      .dps-sidebar-content {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-bottom: 16px;
+        /* thin scrollbar */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.15) transparent;
+      }
+      .dps-sidebar-content::-webkit-scrollbar { width: 4px; }
+      .dps-sidebar-content::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.18);
+        border-radius: 4px;
+      }
+
+      /* ── Vertical tab navigation inside sidebar ──────── */
+      .dps-nav-section {
+        padding: 8px 8px 4px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        margin-bottom: 6px;
+      }
+      .dps-nav-label {
+        font-size: 0.67em;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: #64748b;
+        padding: 4px 8px 6px;
+      }
+
+      /* Override horizontal tabs → vertical list */
+      .dps-nav-section .tabs {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1px !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-bottom: none !important;
+        overflow-x: unset !important;
+        flex-wrap: unset !important;
+      }
+      .dps-nav-section .tab {
+        display: flex !important;
+        align-items: center !important;
+        padding: 8px 10px !important;
+        border-radius: 6px !important;
+        font-size: 0.8em !important;
+        font-weight: 500 !important;
+        color: #94a3b8 !important;
+        background: transparent !important;
+        border: none !important;
+        border-bottom: none !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        transition: background 0.13s, color 0.13s !important;
+        line-height: 1.3 !important;
+        min-height: unset !important;
+      }
+      .dps-nav-section .tab:hover {
+        background: rgba(255,255,255,0.07) !important;
+        color: #e2e8f0 !important;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+      .dps-nav-section .tab.active {
+        background: rgba(102,126,234,0.25) !important;
+        color: #a5b4fc !important;
+        font-weight: 600 !important;
+        border: none !important;
+        border-bottom: none !important;
+      }
+      /* Remove blue bottom-border active indicator used in horizontal mode */
+      .dps-nav-section .tab.active::after { display: none !important; }
+
+      /* ── Projects section label ───────────────────────── */
+      .dps-projects-label {
+        font-size: 0.67em;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: #64748b;
+        padding: 10px 16px 5px;
+      }
+
+      /* ── Three-dots menu on project cards ───────────────
+         Injected by dacum-phase1.js into .dps-card-body     */
+      .dps-dots-wrap {
+        position: relative;
+        flex-shrink: 0;
+      }
+      .dps-dots-btn {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 26px !important;
+        height: 26px !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 5px !important;
+        color: #94a3b8 !important;
+        font-size: 1.1em !important;
+        cursor: pointer;
+        box-shadow: none !important;
+        opacity: 0.6;
+        transition: opacity 0.13s, background 0.13s !important;
+        line-height: 1 !important;
+        min-height: unset !important;
+        transform: none !important;
+      }
+      .dps-dots-btn:hover {
+        opacity: 1 !important;
+        background: rgba(255,255,255,0.12) !important;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+      .dps-dots-dropdown {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 4px);
+        background: #1e293b;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+        min-width: 148px;
+        z-index: 9999;
+        overflow: hidden;
+        animation: dph1-dropdown-in 0.12s ease;
+      }
+      @keyframes dph1-dropdown-in {
+        from { opacity:0; transform:translateY(-4px) scale(0.97); }
+        to   { opacity:1; transform:translateY(0) scale(1); }
+      }
+      .dps-dots-dropdown button {
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 9px 14px !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        color: #cbd5e1 !important;
+        font-size: 0.82em !important;
+        font-weight: 500 !important;
+        cursor: pointer !important;
+        text-align: left !important;
+        gap: 8px !important;
+        transition: background 0.1s !important;
+        box-shadow: none !important;
+        transform: none !important;
+        min-height: unset !important;
+      }
+      .dps-dots-dropdown button:hover {
+        background: rgba(255,255,255,0.08) !important;
+        color: #fff !important;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+      .dps-dots-dropdown .dps-dd-delete:hover {
+        background: rgba(239,68,68,0.15) !important;
+        color: #fca5a5 !important;
+      }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 DACUM Live Pro <span style="font-size: 0.5em; color: #667eea; font-weight: normal;">v3.0</span></h1>
-        <p style="text-align: center; color: #667eea; font-size: 0.95em; margin: -10px 0 20px 0; font-style: italic;">Analysis • Verification • Competency Mapping • Learning Design</p>
+        <!-- h1 + tagline moved into sidebar header by dacum-phase1.js -->
+        <div class="dph1-page-title" aria-hidden="true" style="display:none">
+          <h1>📊 DACUM Live Pro <span style="font-size:0.5em;color:#667eea;font-weight:normal;">v3.0</span></h1>
+          <p style="text-align:center;color:#667eea;font-size:0.95em;margin:-10px 0 20px 0;font-style:italic;">Analysis • Verification • Competency Mapping • Learning Design</p>
+        </div>
         
         <div class="tabs">
-            <div class="tab active" data-tab="info-tab">📋 <span data-i18n="tabChartInfo">Chart Info</span></div>
-            <div class="tab" data-tab="duties-tab">✅ <span data-i18n="tabDuties">Duties & Tasks</span></div>
-            <div class="tab" data-tab="additional-info-tab">📚 <span data-i18n="tabAdditionalInfo">Additional Info</span></div>
-            <div class="tab" data-tab="verification-tab">🎯 <span data-i18n="tabVerification">Task Verification</span></div>
-            <div class="tab" data-tab="clustering-tab">🎯 <span data-i18n="tabClustering">Competency Clusters</span></div>
-            <div class="tab" data-tab="learning-outcomes-tab">🎓 <span data-i18n="tabLearningOutcomes">Learning Outcomes</span></div>
-            <div class="tab" data-tab="module-mapping-tab">📦 <span data-i18n="tabModuleMapping">Module Mapping</span></div>
-            <div class="tab" data-tab="contact-tab">❓ <span data-i18n="tabHelp">Help</span></div>
+            <div class="tab active" data-tab="info-tab">📋 Chart Info</div>
+            <div class="tab" data-tab="duties-tab">✅ Duties & Tasks</div>
+            <div class="tab" data-tab="additional-info-tab">📚 Additional Info</div>
+            <div class="tab" data-tab="verification-tab">🎯 Task Verification</div>
+            <div class="tab" data-tab="clustering-tab">🎯 Competency Clusters</div>
+            <div class="tab" data-tab="learning-outcomes-tab">🎓 Learning Outcomes</div>
+            <div class="tab" data-tab="module-mapping-tab">📦 Module Mapping</div>
+            <div class="tab" data-tab="contact-tab">❓ Help</div>
         </div>
         
         <div class="tab-content active" id="info-tab">
             <div style="margin-bottom: 15px;">
                 <button data-action="clear-tab" data-tab-id="info-tab" style="background: #ef4444; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em;">
-                    🗑️ <span data-i18n="btnClearTab">Clear This Tab</span>
+                    🗑️ Clear This Tab
                 </button>
             </div>
             
-            <h2><span data-i18n="h2ChartInfo">DACUM Research Chart Information</span></h2>
+            <h2>DACUM Research Chart Information</h2>
             
             <div class="mb-20">
                 <div class="mb-10">
-                    <label for="dacumDate"><span data-i18n="labelDate">📅 DACUM Date:</span></label>
+                    <label for="dacumDate">📅 DACUM Date:</label>
                     <input type="date" id="dacumDate" style="cursor: pointer;">
                 </div>
                 
                 <div class="mb-10">
-                    <label for="venue"><span data-i18n="labelVenue">📍 Venue:</span></label>
-                    <input type="text" id="venue" placeholder="e.g., Conference Center, City" data-i18n="phVenue" data-i18n-attr="placeholder">
+                    <label for="venue">📍 Venue:</label>
+                    <input type="text" id="venue" placeholder="e.g., Conference Center, City">
                 </div>
                 
                 <div class="mb-10">
-                    <label for="producedFor"><span data-i18n="labelProducedFor">🏢 Produced For:</span></label>
-                    <input type="text" id="producedFor" placeholder="e.g., Company/Organization Name" data-i18n="phProducedFor" data-i18n-attr="placeholder">
+                    <label for="producedFor">🏢 Produced For:</label>
+                    <input type="text" id="producedFor" placeholder="e.g., Company/Organization Name">
                     <div class="image-upload-container">
                         <div class="image-preview" id="producedForImagePreview">
                             <span style="color: #999; font-size: 0.9em;">No image</span>
@@ -103,8 +383,8 @@
                 </div>
                 
                 <div class="mb-10">
-                    <label for="producedBy"><span data-i18n="labelProducedBy">🎓 Produced By:</span></label>
-                    <input type="text" id="producedBy" placeholder="e.g., Training Institution Name" data-i18n="phProducedBy" data-i18n-attr="placeholder">
+                    <label for="producedBy">🎓 Produced By:</label>
+                    <input type="text" id="producedBy" placeholder="e.g., Training Institution Name">
                     <div class="image-upload-container">
                         <div class="image-preview" id="producedByImagePreview">
                             <span style="color: #999; font-size: 0.9em;">No image</span>
@@ -122,43 +402,43 @@
                 </div>
                 
                 <div class="mb-10">
-                    <label for="occupationTitle"><span data-i18n="labelOccupation">💼 Occupation Title:</span></label>
-                    <input type="text" id="occupationTitle" placeholder="e.g., Automotive Technician" data-i18n="phOccupation" data-i18n-attr="placeholder">
+                    <label for="occupationTitle">💼 Occupation Title:</label>
+                    <input type="text" id="occupationTitle" placeholder="e.g., Automotive Technician">
                 </div>
                 
                 <div class="mb-10">
-                    <label for="jobTitle"><span data-i18n="labelJobTitle">👔 Job Title:</span></label>
-                    <input type="text" id="jobTitle" placeholder="e.g., Service Technician Level 2" data-i18n="phJobTitle" data-i18n-attr="placeholder">
+                    <label for="jobTitle">👔 Job Title:</label>
+                    <input type="text" id="jobTitle" placeholder="e.g., Service Technician Level 2">
                 </div>
                 
                 <div class="mb-10">
-                    <label for="sector"><span data-i18n="labelSector">🏭 Sector (Optional):</span></label>
-                    <input type="text" id="sector" placeholder="e.g., Automotive, Healthcare, IT" data-i18n="phSector" data-i18n-attr="placeholder">
+                    <label for="sector">🏭 Sector (Optional):</label>
+                    <input type="text" id="sector" placeholder="e.g., Automotive, Healthcare, IT">
                 </div>
                 
                 <div class="mb-10">
-                    <label for="context"><span data-i18n="labelContext">🌍 Country / Context (Optional):</span></label>
-                    <input type="text" id="context" placeholder="e.g., Iraq, Middle East" data-i18n="phContext" data-i18n-attr="placeholder">
+                    <label for="context">🌍 Country / Context (Optional):</label>
+                    <input type="text" id="context" placeholder="e.g., Iraq, Middle East">
                 </div>
                 
                 <div class="mb-10">
-                    <label for="facilitators"><span data-i18n="labelFacilitators">👥 Facilitators:</span></label>
-                    <textarea id="facilitators" placeholder="Enter facilitator names (one per line)" data-i18n="phFacilitators" data-i18n-attr="placeholder" style="min-height: 80px; font-family: inherit; resize: vertical;"></textarea>
+                    <label for="facilitators">👥 Facilitators:</label>
+                    <textarea id="facilitators" placeholder="Enter facilitator names (one per line)" style="min-height: 80px; font-family: inherit; resize: vertical;"></textarea>
                 </div>
                 
                 <div class="mb-10">
-                    <label for="observers"><span data-i18n="labelObservers">👁️ Observers:</span></label>
-                    <textarea id="observers" placeholder="Enter observer names (one per line)" data-i18n="phObservers" data-i18n-attr="placeholder" style="min-height: 80px; font-family: inherit; resize: vertical;"></textarea>
+                    <label for="observers">👁️ Observers:</label>
+                    <textarea id="observers" placeholder="Enter observer names (one per line)" style="min-height: 80px; font-family: inherit; resize: vertical;"></textarea>
                 </div>
                 
                 <div class="mb-10">
-                    <label for="panelMembers"><span data-i18n="labelPanelMembers">🎯 Panel Members:</span></label>
-                    <textarea id="panelMembers" placeholder="Enter panel member names (one per line)" data-i18n="phPanel" data-i18n-attr="placeholder" style="min-height: 80px; font-family: inherit; resize: vertical;"></textarea>
+                    <label for="panelMembers">🎯 Panel Members:</label>
+                    <textarea id="panelMembers" placeholder="Enter panel member names (one per line)" style="min-height: 80px; font-family: inherit; resize: vertical;"></textarea>
                 </div>
                 
                 <div style="margin-top: 30px; text-align: right;">
                     <button onclick="window.switchTab('duties-tab')" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                        <span data-i18n="btnProceedDuties">Proceed to Duties & Tasks →</span>
+                        Proceed to Duties & Tasks →
                     </button>
                 </div>
             </div>
@@ -167,33 +447,42 @@
         <div class="tab-content" id="duties-tab">
             <div style="margin-bottom: 15px;">
                 <button data-action="clear-tab" data-tab-id="duties-tab" style="background: #ef4444; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em;">
-                    🗑️ <span data-i18n="btnClearTab">Clear This Tab</span>
+                    🗑️ Clear This Tab
                 </button>
             </div>
             
-            <h2 id="dutiesViewHeading"><span data-i18n="h2Duties">Duties and Tasks</span></h2>
+            <h2 id="dutiesViewHeading">Duties and Tasks</h2>
             
             <!-- AI Generation Section -->
             <div style="margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; text-align: center;">
-                <h3 style="color: white; margin: 0 0 10px 0; font-size: 1.1em;" data-i18n="aiCardTitle">✨ AI-Powered DACUM Generation</h3>
+                <h3 style="color: white; margin: 0 0 10px 0; font-size: 1.1em;">✨ AI-Powered DACUM Generation</h3>
                 <p style="color: rgba(255,255,255,0.9); margin: 0 0 15px 0; font-size: 0.95em;">Generate complete duties and tasks automatically based on occupation details</p>
                 <button class="btn-ai-generate" id="aiGenerateBtn"  style="background: white; color: #667eea; padding: 12px 30px; font-size: 1.05em; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                    <span data-i18n="btnGenerateAI">🤖 Generate AI Draft</span>
+                    🤖 Generate AI Draft
                 </button>
-                <p style="color: rgba(255,255,255,0.8); margin: 15px 0 0 0; font-size: 0.85em;"><span data-i18n="aiCardHint">💡 Make sure to fill Occupation Title and Job Title in Chart Info tab first</span></p>
+                <p style="color: rgba(255,255,255,0.8); margin: 15px 0 0 0; font-size: 0.85em;">💡 Make sure to fill Occupation Title and Job Title in Chart Info tab first</p>
             </div>
 
+            <!-- Refine Results (hidden until AI generates) -->
             <div id="refineResultsSection" style="display:none; margin: -10px 0 22px 0;">
-                <div style="display:flex;align-items:center;gap:14px;padding:13px 18px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;">
-                    <span style="font-size:1.1em;flex-shrink:0;">&#x2728;</span>
-                    <div style="flex:1;min-width:0;">
-                        <p style="margin:0 0 2px;font-size:0.86em;font-weight:700;color:#374151;" data-i18n="refineTitle">Refine AI Results</p>
-                        <p style="margin:0;font-size:0.78em;color:#6b7280;line-height:1.4;">
-                            <span data-i18n="refineDesc">Clean duplicates, normalize wording, remove result clauses &amp; fragments.</span>
-                            <strong style="color:#4b5563;" data-i18n="refineReversible">Reversible with Ctrl+Z.</strong>
+                <div style="display:flex; align-items:center; gap:14px; padding:13px 18px;
+                            background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:10px;">
+                    <span style="font-size:1.1em; flex-shrink:0;">&#x2728;</span>
+                    <div style="flex:1; min-width:0;">
+                        <p style="margin:0 0 2px; font-size:0.86em; font-weight:700; color:#374151;">Refine AI Results</p>
+                        <p style="margin:0; font-size:0.78em; color:#6b7280; line-height:1.4;">
+                            Clean duplicates, normalize wording, remove result clauses &amp; fragments.
+                            <strong style="color:#4b5563;">Reversible with Ctrl+Z.</strong>
                         </p>
                     </div>
-                    <button id="btnRefineResults" style="flex-shrink:0;padding:8px 18px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;font-size:0.84em;font-weight:600;cursor:pointer;white-space:nowrap;" data-i18n="btnRefine">&#x1F9F9; Refine Results</button>
+                    <button id="btnRefineResults"
+                            style="flex-shrink:0; padding:8px 18px; background:#ffffff; color:#374151;
+                                   border:1.5px solid #d1d5db; border-radius:8px; font-size:0.84em;
+                                   font-weight:600; cursor:pointer; white-space:nowrap;"
+                            onmouseover="this.style.background='#f0f4ff';this.style.borderColor='#a5b4fc';"
+                            onmouseout="this.style.background='#fff';this.style.borderColor='#d1d5db';">
+                        &#x1F9F9; Refine Results
+                    </button>
                 </div>
             </div>
 
@@ -201,32 +490,32 @@
             <div style="display:flex; align-items:center; justify-content:space-between; margin: 18px 0 10px 0;">
               <span id="dutiesViewHeading" style="font-size:1.05em; font-weight:700; color:#374151;">Card View — Duties &amp; Tasks</span>
               <button id="btnToggleDutiesView" class="dcv-toggle-btn is-card">
-                📋 <span data-i18n="btnTableView">Table View</span>
+                📋 Table View
               </button>
             </div>
             
             <div id="dutiesContainer"></div>
-            <button class="btn-add" id="btnAddDuty"><span data-i18n="btnAddDuty">➕ Add Duty</span></button>
+            <button class="btn-add" id="btnAddDuty">➕ Add Duty</button>
             
             <div style="margin-top: 30px; text-align: right;">
                 <button onclick="window.switchTab('additional-info-tab')" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                    <span data-i18n="btnProceedAdditional">Proceed to Additional Info →</span>
+                    Proceed to Additional Info →
                 </button>
             </div>
         </div>
         
         <div class="tab-content" id="additional-info-tab">
-            <h2><span data-i18n="h2Additional">Additional Information</span></h2>
+            <h2>Additional Information</h2>
             <p style="color: #666; margin-bottom: 25px; font-size: 1.05em;">📝 Enter information for each section. Click the rename button to customize section headings.</p>
             
             <div class="section-container">
                 <div class="section-header-editable">
-                    <h3 id="knowledgeHeading" contenteditable="false" data-i18n="sectionKnowledge">Knowledge Requirements</h3>
+                    <h3 id="knowledgeHeading" contenteditable="false">Knowledge Requirements</h3>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn-format" data-action="format-list" data-input-id="knowledgeInput" data-format-type="number" title="Add numbering">🔢 <span data-i18n="btnNumber">Number</span></button>
-                        <button class="btn-format" data-action="format-list" data-input-id="knowledgeInput" data-format-type="bullet" title="Add bullets">• <span data-i18n="btnBullet">Bullet</span></button>
-                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="knowledgeHeading">✏️ <span data-i18n="btnRename">Rename</span></button>
-                        <button class="btn-clear-section" data-action="clear-section" data-input-id="knowledgeInput" data-heading-id="knowledgeHeading" data-default-heading="Knowledge Requirements">🗑️ <span data-i18n="btnClearSection">Clear</span></button>
+                        <button class="btn-format" data-action="format-list" data-input-id="knowledgeInput" data-format-type="number" title="Add numbering">🔢 Number</button>
+                        <button class="btn-format" data-action="format-list" data-input-id="knowledgeInput" data-format-type="bullet" title="Add bullets">• Bullet</button>
+                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="knowledgeHeading">✏️ Rename</button>
+                        <button class="btn-clear-section" data-action="clear-section" data-input-id="knowledgeInput" data-heading-id="knowledgeHeading" data-default-heading="Knowledge Requirements">🗑️ Clear</button>
                     </div>
                 </div>
                 <textarea id="knowledgeInput" placeholder="Enter each knowledge requirement on a new line&#10;Example:&#10;• Understanding of electrical systems&#10;• Knowledge of safety protocols"></textarea>
@@ -234,12 +523,12 @@
             
             <div class="section-container">
                 <div class="section-header-editable">
-                    <h3 id="skillsHeading" contenteditable="false" data-i18n="sectionSkills">Skills Requirements</h3>
+                    <h3 id="skillsHeading" contenteditable="false">Skills Requirements</h3>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn-format" data-action="format-list" data-input-id="skillsInput" data-format-type="number" title="Add numbering">🔢 <span data-i18n="btnNumber">Number</span></button>
-                        <button class="btn-format" data-action="format-list" data-input-id="skillsInput" data-format-type="bullet" title="Add bullets">• <span data-i18n="btnBullet">Bullet</span></button>
-                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="skillsHeading">✏️ <span data-i18n="btnRename">Rename</span></button>
-                        <button class="btn-clear-section" data-action="clear-section" data-input-id="skillsInput" data-heading-id="skillsHeading" data-default-heading="Skills Requirements">🗑️ <span data-i18n="btnClearSection">Clear</span></button>
+                        <button class="btn-format" data-action="format-list" data-input-id="skillsInput" data-format-type="number" title="Add numbering">🔢 Number</button>
+                        <button class="btn-format" data-action="format-list" data-input-id="skillsInput" data-format-type="bullet" title="Add bullets">• Bullet</button>
+                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="skillsHeading">✏️ Rename</button>
+                        <button class="btn-clear-section" data-action="clear-section" data-input-id="skillsInput" data-heading-id="skillsHeading" data-default-heading="Skills Requirements">🗑️ Clear</button>
                     </div>
                 </div>
                 <textarea id="skillsInput" placeholder="Enter each skill requirement on a new line&#10;Example:&#10;• Ability to read technical diagrams&#10;• Proficiency in using hand tools"></textarea>
@@ -247,12 +536,12 @@
             
             <div class="section-container">
                 <div class="section-header-editable">
-                    <h3 id="behaviorsHeading" contenteditable="false" data-i18n="sectionBehaviors">Worker Behaviors/Traits</h3>
+                    <h3 id="behaviorsHeading" contenteditable="false">Worker Behaviors/Traits</h3>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn-format" data-action="format-list" data-input-id="behaviorsInput" data-format-type="number" title="Add numbering">🔢 <span data-i18n="btnNumber">Number</span></button>
-                        <button class="btn-format" data-action="format-list" data-input-id="behaviorsInput" data-format-type="bullet" title="Add bullets">• <span data-i18n="btnBullet">Bullet</span></button>
-                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="behaviorsHeading">✏️ <span data-i18n="btnRename">Rename</span></button>
-                        <button class="btn-clear-section" data-action="clear-section" data-input-id="behaviorsInput" data-heading-id="behaviorsHeading" data-default-heading="Worker Behaviors/Traits">🗑️ <span data-i18n="btnClearSection">Clear</span></button>
+                        <button class="btn-format" data-action="format-list" data-input-id="behaviorsInput" data-format-type="number" title="Add numbering">🔢 Number</button>
+                        <button class="btn-format" data-action="format-list" data-input-id="behaviorsInput" data-format-type="bullet" title="Add bullets">• Bullet</button>
+                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="behaviorsHeading">✏️ Rename</button>
+                        <button class="btn-clear-section" data-action="clear-section" data-input-id="behaviorsInput" data-heading-id="behaviorsHeading" data-default-heading="Worker Behaviors/Traits">🗑️ Clear</button>
                     </div>
                 </div>
                 <textarea id="behaviorsInput" placeholder="Enter each behavior or trait on a new line&#10;Example:&#10;• Attention to detail&#10;• Good communication skills"></textarea>
@@ -260,12 +549,12 @@
             
             <div class="section-container">
                 <div class="section-header-editable">
-                    <h3 id="toolsHeading" contenteditable="false" data-i18n="sectionTools">Tools, Equipment, Supplies and Materials</h3>
+                    <h3 id="toolsHeading" contenteditable="false">Tools, Equipment, Supplies and Materials</h3>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn-format" data-action="format-list" data-input-id="toolsInput" data-format-type="number" title="Add numbering">🔢 <span data-i18n="btnNumber">Number</span></button>
-                        <button class="btn-format" data-action="format-list" data-input-id="toolsInput" data-format-type="bullet" title="Add bullets">• <span data-i18n="btnBullet">Bullet</span></button>
-                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="toolsHeading">✏️ <span data-i18n="btnRename">Rename</span></button>
-                        <button class="btn-clear-section" data-action="clear-section" data-input-id="toolsInput" data-heading-id="toolsHeading" data-default-heading="Tools, Equipment, Supplies and Materials">🗑️ <span data-i18n="btnClearSection">Clear</span></button>
+                        <button class="btn-format" data-action="format-list" data-input-id="toolsInput" data-format-type="number" title="Add numbering">🔢 Number</button>
+                        <button class="btn-format" data-action="format-list" data-input-id="toolsInput" data-format-type="bullet" title="Add bullets">• Bullet</button>
+                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="toolsHeading">✏️ Rename</button>
+                        <button class="btn-clear-section" data-action="clear-section" data-input-id="toolsInput" data-heading-id="toolsHeading" data-default-heading="Tools, Equipment, Supplies and Materials">🗑️ Clear</button>
                     </div>
                 </div>
                 <textarea id="toolsInput" placeholder="Enter each tool/equipment on a new line&#10;Example:&#10;• Digital multimeter&#10;• Pneumatic impact wrench"></textarea>
@@ -273,12 +562,12 @@
             
             <div class="section-container">
                 <div class="section-header-editable">
-                    <h3 id="trendsHeading" contenteditable="false" data-i18n="sectionTrends">Future Trends and Concerns</h3>
+                    <h3 id="trendsHeading" contenteditable="false">Future Trends and Concerns</h3>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn-format" data-action="format-list" data-input-id="trendsInput" data-format-type="number" title="Add numbering">🔢 <span data-i18n="btnNumber">Number</span></button>
-                        <button class="btn-format" data-action="format-list" data-input-id="trendsInput" data-format-type="bullet" title="Add bullets">• <span data-i18n="btnBullet">Bullet</span></button>
-                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="trendsHeading">✏️ <span data-i18n="btnRename">Rename</span></button>
-                        <button class="btn-clear-section" data-action="clear-section" data-input-id="trendsInput" data-heading-id="trendsHeading" data-default-heading="Future Trends and Concerns">🗑️ <span data-i18n="btnClearSection">Clear</span></button>
+                        <button class="btn-format" data-action="format-list" data-input-id="trendsInput" data-format-type="number" title="Add numbering">🔢 Number</button>
+                        <button class="btn-format" data-action="format-list" data-input-id="trendsInput" data-format-type="bullet" title="Add bullets">• Bullet</button>
+                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="trendsHeading">✏️ Rename</button>
+                        <button class="btn-clear-section" data-action="clear-section" data-input-id="trendsInput" data-heading-id="trendsHeading" data-default-heading="Future Trends and Concerns">🗑️ Clear</button>
                     </div>
                 </div>
                 <textarea id="trendsInput" placeholder="Enter each trend/concern on a new line&#10;Example:&#10;• Increased use of electric vehicles&#10;• Advanced driver assistance systems"></textarea>
@@ -286,12 +575,12 @@
             
             <div class="section-container">
                 <div class="section-header-editable">
-                    <h3 id="acronymsHeading" contenteditable="false" data-i18n="sectionAcronyms">Acronyms</h3>
+                    <h3 id="acronymsHeading" contenteditable="false">Acronyms</h3>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn-format" data-action="format-list" data-input-id="acronymsInput" data-format-type="number" title="Add numbering">🔢 <span data-i18n="btnNumber">Number</span></button>
-                        <button class="btn-format" data-action="format-list" data-input-id="acronymsInput" data-format-type="bullet" title="Add bullets">• <span data-i18n="btnBullet">Bullet</span></button>
-                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="acronymsHeading">✏️ <span data-i18n="btnRename">Rename</span></button>
-                        <button class="btn-clear-section" data-action="clear-section" data-input-id="acronymsInput" data-heading-id="acronymsHeading" data-default-heading="Acronyms">🗑️ <span data-i18n="btnClearSection">Clear</span></button>
+                        <button class="btn-format" data-action="format-list" data-input-id="acronymsInput" data-format-type="number" title="Add numbering">🔢 Number</button>
+                        <button class="btn-format" data-action="format-list" data-input-id="acronymsInput" data-format-type="bullet" title="Add bullets">• Bullet</button>
+                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="acronymsHeading">✏️ Rename</button>
+                        <button class="btn-clear-section" data-action="clear-section" data-input-id="acronymsInput" data-heading-id="acronymsHeading" data-default-heading="Acronyms">🗑️ Clear</button>
                     </div>
                 </div>
                 <textarea id="acronymsInput" placeholder="Enter acronyms and their definitions on separate lines&#10;Example:&#10;• OBD - On-Board Diagnostics&#10;• ECU - Engine Control Unit&#10;• TPMS - Tire Pressure Monitoring System&#10;• ABS - Anti-lock Braking System"></textarea>
@@ -299,12 +588,12 @@
             
             <div class="section-container">
                 <div class="section-header-editable">
-                    <h3 id="careerPathHeading" contenteditable="false" data-i18n="sectionCareerPath">Career Path</h3>
+                    <h3 id="careerPathHeading" contenteditable="false">Career Path</h3>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn-format" data-action="format-list" data-input-id="careerPathInput" data-format-type="number" title="Add numbering">🔢 <span data-i18n="btnNumber">Number</span></button>
-                        <button class="btn-format" data-action="format-list" data-input-id="careerPathInput" data-format-type="bullet" title="Add bullets">• <span data-i18n="btnBullet">Bullet</span></button>
-                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="careerPathHeading">✏️ <span data-i18n="btnRename">Rename</span></button>
-                        <button class="btn-clear-section" data-action="clear-section" data-input-id="careerPathInput" data-heading-id="careerPathHeading" data-default-heading="Career Path">🗑️ <span data-i18n="btnClearSection">Clear</span></button>
+                        <button class="btn-format" data-action="format-list" data-input-id="careerPathInput" data-format-type="number" title="Add numbering">🔢 Number</button>
+                        <button class="btn-format" data-action="format-list" data-input-id="careerPathInput" data-format-type="bullet" title="Add bullets">• Bullet</button>
+                        <button class="btn-rename" data-action="toggle-edit-heading" data-heading-id="careerPathHeading">✏️ Rename</button>
+                        <button class="btn-clear-section" data-action="clear-section" data-input-id="careerPathInput" data-heading-id="careerPathHeading" data-default-heading="Career Path">🗑️ Clear</button>
                     </div>
                 </div>
                 <textarea id="careerPathInput" placeholder="Enter career progression information on separate lines&#10;Example:&#10;• Entry Level: Technician Apprentice&#10;• Mid Level: Certified Technician&#10;• Advanced: Senior Technician / Specialist&#10;• Management: Shop Foreman / Service Manager"></textarea>
@@ -316,19 +605,19 @@
             <!-- Add Section Button -->
             <div style="margin-top: 20px; text-align: center;">
                 <button class="btn-add" id="btnAddCustomSection" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 12px 24px; font-size: 1.05em;">
-                    ➕ <span data-i18n="btnAddSection">Add Section</span>
+                    ➕ Add Section
                 </button>
             </div>
             
             <!-- ADDITIONAL INFO – Skills Level Matrix (Collapsible) -->
             <div class="skills-level-accordion">
                 <div class="skills-level-header" id="btnToggleSkillsLevel">
-                    <div class="skills-level-title">📊 <span data-i18n="skillsMatrixTitle">Skills Level Matrix (click to expand)</span></div>
+                    <div class="skills-level-title">📊 Skills Level Matrix (click to expand)</div>
                     <div class="skills-level-toggle">▼</div>
                 </div>
                 <div class="skills-level-content" id="skillsLevelContent">
                     <div class="skills-level-info-box">
-                        <h3 data-i18n="skillsMatrixSubtitle">Employability Competencies by Occupational Level</h3>
+                        <h3>Employability Competencies by Occupational Level</h3>
                         <p>Select the minimum required skills level for this occupation.</p>
                         <ul style="margin-top: 10px;">
                             <li><strong>Craftsman/Supervisor</strong> - Advanced level requiring comprehensive skills</li>
@@ -346,14 +635,14 @@
                     <div id="skillsLevelContainer"></div>
 
                     <div class="skills-level-buttons">
-                        <button class="btn-add-category" id="btnAddSkillsCategory">➕ <span data-i18n="btnAddSection">Add Category</span></button>
+                        <button class="btn-add-category" id="btnAddSkillsCategory">➕ Add Category</button>
                     </div>
                 </div>
             </div>
             
             <div style="margin-top: 30px; text-align: right;">
                 <button onclick="window.switchTab('verification-tab')" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                    <span data-i18n="btnProceedVerification">Proceed to Task Verification →</span>
+                    Proceed to Task Verification →
                 </button>
             </div>
         </div>
@@ -377,11 +666,11 @@
                 <div class="mode-options">
                     <div class="mode-option">
                         <input type="radio" id="mode-workshop" name="collectionMode" value="workshop" checked>
-                        <label for="mode-workshop">👥 <span data-i18n="modeWorkshop">Workshop (Facilitated)</span></label>
+                        <label for="mode-workshop">👥 Workshop (Facilitated)</label>
                     </div>
                     <div class="mode-option">
                         <input type="radio" id="mode-survey" name="collectionMode" value="survey">
-                        <label for="mode-survey">📝 <span data-i18n="modeSurvey">Individual / Survey</span></label>
+                        <label for="mode-survey">📝 Individual / Survey</label>
                     </div>
                 </div>
             </div>
@@ -392,11 +681,11 @@
                 <div class="mode-options">
                     <div class="mode-option">
                         <input type="radio" id="workflow-standard" name="workflowMode" value="standard" checked>
-                        <label for="workflow-standard">📊 <span data-i18n="modeStandard">Standard (DACUM)</span></label>
+                        <label for="workflow-standard">📊 Standard (DACUM)</label>
                     </div>
                     <div class="mode-option">
                         <input type="radio" id="workflow-extended" name="workflowMode" value="extended">
-                        <label for="workflow-extended">📈 <span data-i18n="modeExtended">Extended (DACUM)</span></label>
+                        <label for="workflow-extended">📈 Extended (DACUM)</label>
                     </div>
                 </div>
             </div>
@@ -416,11 +705,11 @@
                 <div class="formula-options">
                     <div class="formula-option">
                         <input type="radio" id="formula-if" name="priorityFormula" value="if" checked>
-                        <label for="formula-if"><span data-i18n="formulaIF">Importance × Frequency</span></label>
+                        <label for="formula-if">Importance × Frequency</label>
                     </div>
                     <div class="formula-option">
                         <input type="radio" id="formula-ifd" name="priorityFormula" value="ifd">
-                        <label for="formula-ifd"><span data-i18n="formulaIFD">Importance × Frequency × Difficulty</span></label>
+                        <label for="formula-ifd">Importance × Frequency × Difficulty</label>
                     </div>
                 </div>
                 <p style="margin: 10px 0 0 0; color: #666; font-size: 0.9em;">
@@ -708,14 +997,14 @@
             
             <div style="margin-top: 30px; text-align: right;">
                 <button id="btnProceedToClustering" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                    <span data-i18n="btnProceedClustering">Proceed to Competency Clustering →</span>
+                    Proceed to Competency Clustering →
                 </button>
             </div>
 
         </div>
         
         <div class="tab-content" id="clustering-tab">
-            <h2><span data-i18n="h2Clustering">🎯 Competency Clusters</span></h2>
+            <h2>🎯 Competency Clusters</h2>
             
             <!-- Available Tasks Section -->
             <div class="clustering-section">
@@ -739,13 +1028,13 @@
             
             <div style="margin-top: 30px; text-align: right;">
                 <button onclick="window.switchTab('learning-outcomes-tab')" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                    <span data-i18n="btnProceedLO">Proceed to Learning Outcomes →</span>
+                    Proceed to Learning Outcomes →
                 </button>
             </div>
         </div>
         
         <div class="tab-content" id="learning-outcomes-tab">
-            <h2><span data-i18n="h2LO">🎓 Learning Outcomes</span></h2>
+            <h2>🎓 Learning Outcomes</h2>
             
             <!-- Section 1: Mode Information -->
             <div class="lo-mode-info">
@@ -788,13 +1077,13 @@
             
             <div style="margin-top: 30px; text-align: right;">
                 <button onclick="window.switchTab('module-mapping-tab')" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                    <span data-i18n="btnProceedModule">Proceed to Module Mapping →</span>
+                    Proceed to Module Mapping →
                 </button>
             </div>
         </div>
         
         <div class="tab-content" id="module-mapping-tab">
-            <h2><span data-i18n="h2Module">📦 Module Mapping</span></h2>
+            <h2>📦 Module Mapping</h2>
             
             <div style="background: linear-gradient(135deg, #f0f7ff 0%, #e0f2fe 100%); padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 2px solid #667eea;">
                 <p style="margin: 0; color: #334155; line-height: 1.6;">
@@ -857,7 +1146,7 @@
                     ✨ Ready to build detailed training modules?
                 </h3>
                 <button id="btnOpenModuleBuilder" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 16px 40px; font-size: 1.2em; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); transition: all 0.3s ease; margin-bottom: 15px;">
-                    <span data-i18n="btnProceedModuleBuilder">🚀 Proceed to Module Builder</span>
+                    🚀 Proceed to Module Builder
                 </button>
                 <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 0.95em; font-style: italic;">
                     Export your modules and continue with detailed curriculum development
@@ -871,7 +1160,7 @@
             <div class="hc-header">
                 <div class="hc-header-icon">❓</div>
                 <div>
-                    <h2 class="hc-title"><span data-i18n="h2Help">Help Center</span></h2>
+                    <h2 class="hc-title">Help Center</h2>
                     <p class="hc-subtitle">Everything you need to use DACUM Live Pro effectively</p>
                 </div>
             </div>
@@ -1058,19 +1347,28 @@
     <script type="module" src="app.js"></script>
     <script src="dacum-ui.js"></script>
     <script src="dacum-mobile.js"></script>
+    <script src="tv-refactor.js"></script>
     <script src="dacum-fixes.js"></script>
-    <script src="translations.js"></script>
+    <script src="dacum-phase1.js"></script>
 
     <!-- ── Fixed Top Toolbar ──────────────────────────────────── -->
     <div id="dacumTopToolbar">
       <div class="dtb-left">
-        <button id="btnSidebarToggle" title="Toggle Projects Sidebar" aria-label="Toggle sidebar">
+        <!-- ── btnSidebarToggle: invisible sentinel wired by dacum-mobile.js ── -->
+        <button id="btnSidebarToggle" title="Toggle Projects Sidebar" aria-label="Toggle sidebar"
+                style="position:absolute;pointer-events:none;opacity:0;width:0;height:0;overflow:hidden;padding:0;border:0;"></button>
+
+        <!-- ── Re-open button: only shown when sidebar is collapsed (desktop) ── -->
+        <!-- CSS in dacum-responsive.css controls visibility via .sidebar-is-hidden fallback -->
+        <button id="btnReopenSidebar" title="Open sidebar" aria-label="Open sidebar"
+                onclick="document.getElementById('btnSidebarToggle').click()">
           <svg viewBox="0 0 18 18" width="16" height="16" fill="none" aria-hidden="true">
-            <rect x="2" y="3.5"  width="14" height="1.8" rx="0.9" fill="currentColor"/>
-            <rect x="2" y="8.1"  width="14" height="1.8" rx="0.9" fill="currentColor"/>
-            <rect x="2" y="12.7" width="14" height="1.8" rx="0.9" fill="currentColor"/>
+            <rect x="2"  y="3.5"  width="14" height="1.8" rx="0.9" fill="currentColor"/>
+            <rect x="2"  y="8.1"  width="8"  height="1.8" rx="0.9" fill="currentColor"/>
+            <rect x="2"  y="12.7" width="11" height="1.8" rx="0.9" fill="currentColor"/>
           </svg>
         </button>
+
         <button class="dtb-btn dtb-snapshot" id="btnSaveSnapshot" title="Save Snapshot">
           <svg class="dtb-icon" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="3" fill="#f59e0b"/><circle cx="9" cy="9" r="3" fill="#fff"/></svg>
           <span>Snapshot</span>
