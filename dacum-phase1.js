@@ -133,27 +133,28 @@
   }
 
   /* ── STEP 5: Three-dots menu injection ───────────────────────
-     Scans each .dps-card (or direct children of the project list)
-     and injects a dots button if not already present.
-
-     Rename: calls window.renameProject(id, newName) if exposed,
-             falls back to a prompt + manual DOM rename.
-     Delete: finds and clicks the existing delete button in the card
-             (preserves all existing delete logic).                 */
+     For each project card:
+       a) _hideNativeActions()  — hides original rename/delete
+          buttons rendered by dacum_projects.js. They stay in the
+          DOM so .click() delegation keeps working.
+       b) injectDotsMenu()      — injects a single .dps-dots-wrap
+          (idempotent: skips cards that already have one).        */
 
   function _findCardId(card) {
-    /* Prefer explicit data attribute; fall back to common patterns */
     return card.dataset.projectId ||
            card.dataset.id ||
            card.getAttribute('data-project-id') ||
            null;
   }
 
-  function _findBtn(card, keywords) {
-    /* Find an existing button whose text matches any keyword */
-    var btns = card.querySelectorAll('button');
+  /* Find a button inside `root` whose visible text/title matches
+     any keyword. Searches ALL buttons including hidden ones.     */
+  function _findBtn(root, keywords) {
+    var btns = root.querySelectorAll('button');
     for (var i = 0; i < btns.length; i++) {
-      var t = btns[i].textContent.toLowerCase();
+      /* Skip our own injected buttons */
+      if (btns[i].closest('.dps-dots-wrap')) continue;
+      var t = (btns[i].textContent + ' ' + (btns[i].title || '')).toLowerCase();
       for (var k = 0; k < keywords.length; k++) {
         if (t.indexOf(keywords[k]) !== -1) return btns[i];
       }
@@ -161,58 +162,97 @@
     return null;
   }
 
-  function _doRename(card, projectId) {
-    /* Preferred: call the module-exposed global if available */
+  /* Hide all native action buttons/containers in a card.
+     Returns an object with cached references to the hidden
+     rename and delete buttons so delegation still works.        */
+  function _hideNativeActions(card) {
+    var cached = { rename: null, delete: null };
+
+    /* Cache before hiding */
+    cached.rename = _findBtn(card, ['rename', 'edit', '✏']);
+    cached.delete = _findBtn(card, ['delete', 'remove', '🗑', '✕', '×', 'trash']);
+
+    /* Hide any dedicated action-row containers */
+    var actionSelectors = [
+      '.dps-card-actions', '.dps-card-footer', '.dps-card-btns',
+      '.dps-card-controls', '.dps-card-buttons', '.dps-card-action-row',
+      '.dps-btn-row', '[class*="card-action"]', '[class*="card-btn"]',
+      '[class*="card-control"]', '[class*="card-footer"]'
+    ];
+    actionSelectors.forEach(function (sel) {
+      card.querySelectorAll(sel).forEach(function (el) {
+        el.style.display = 'none';
+      });
+    });
+
+    /* Hide any remaining bare buttons in the card body that
+       aren't our dots button and aren't already inside a
+       hidden container                                          */
+    var cardBody = card.querySelector('.dps-card-body') || card;
+    cardBody.querySelectorAll('button').forEach(function (btn) {
+      if (btn.closest('.dps-dots-wrap')) return;   /* ours — skip */
+      btn.style.display = 'none';
+    });
+
+    return cached;
+  }
+
+  function _doRename(card, projectId, cachedBtn) {
+    /* 1. Global module function if exposed */
     if (typeof window.renameProject === 'function') {
-      var currentName =
-        (card.querySelector('.dps-card-name') ||
-         card.querySelector('.dps-project-name') ||
-         card.querySelector('[class*="name"]') ||
-         {}).textContent || '';
-      var newName = window.prompt('Rename project:', currentName.trim());
-      if (newName && newName.trim()) {
-        window.renameProject(projectId, newName.trim());
-      }
+      var nameEl =
+        card.querySelector('.dps-card-name') ||
+        card.querySelector('.dps-project-name') ||
+        card.querySelector('[class*="name"]');
+      var cur = nameEl ? nameEl.textContent.trim() : '';
+      var next = window.prompt('Rename project:', cur);
+      if (next && next.trim()) window.renameProject(projectId, next.trim());
       return;
     }
 
-    /* Fallback: click existing rename button in card if present */
-    var renameBtn = _findBtn(card, ['rename', 'edit', '✏️']);
-    if (renameBtn) { renameBtn.click(); return; }
+    /* 2. Click the cached native rename button (hidden but clickable) */
+    if (cachedBtn) { cachedBtn.click(); return; }
 
-    /* Last resort: prompt + update visible name text node */
+    /* 3. Last resort: prompt + patch visible name node */
     var nameEl =
       card.querySelector('.dps-card-name') ||
       card.querySelector('.dps-project-name') ||
       card.querySelector('[class*="name"]');
-    var currentName = nameEl ? nameEl.textContent.trim() : '';
-    var newName = window.prompt('Rename project:', currentName);
-    if (newName && newName.trim() && nameEl) {
-      nameEl.textContent = newName.trim();
-    }
+    var cur = nameEl ? nameEl.textContent.trim() : '';
+    var next = window.prompt('Rename project:', cur);
+    if (next && next.trim() && nameEl) nameEl.textContent = next.trim();
   }
 
-  function _doDelete(card) {
-    /* Always delegate to the existing delete button — preserves all logic */
-    var delBtn = _findBtn(card, ['delete', 'remove', '🗑', 'trash']);
-    if (delBtn) { delBtn.click(); return; }
+  function _doDelete(card, projectId, cachedBtn) {
+    /* 1. Click the cached native delete button (hidden but clickable) */
+    if (cachedBtn) { cachedBtn.click(); return; }
 
-    /* If no button found and global deleteProject is exposed */
-    var projectId = _findCardId(card);
-    if (projectId && typeof window.deleteProject === 'function') {
-      if (window.confirm('Delete this project?')) {
+    /* 2. Global module function if exposed */
+    if (typeof window.deleteProject === 'function') {
+      if (window.confirm('Delete this project? This cannot be undone.')) {
         window.deleteProject(projectId);
       }
+      return;
     }
+
+    /* 3. Last resort: search again in case DOM changed */
+    var btn = _findBtn(card, ['delete', 'remove', '🗑', '✕', 'trash']);
+    if (btn) btn.click();
   }
 
   function injectDotsMenu(card) {
-    /* Skip if already has a dots menu */
+    /* Idempotent — skip if dots menu already present */
     if (card.querySelector('.dps-dots-wrap')) return;
+
+    /* Skip non-card elements that match our broad selector */
+    if (!card.closest('#dacumProjectsSidebar')) return;
 
     var projectId = _findCardId(card);
 
-    /* ── Build the wrapper ── */
+    /* Hide native buttons FIRST, cache references for delegation */
+    var cached = _hideNativeActions(card);
+
+    /* ── Build dots button ── */
     var wrap = document.createElement('div');
     wrap.className = 'dps-dots-wrap';
 
@@ -220,12 +260,14 @@
     dotsBtn.className = 'dps-dots-btn';
     dotsBtn.title = 'Project options';
     dotsBtn.setAttribute('aria-label', 'Project options');
-    dotsBtn.innerHTML = '<svg viewBox="0 0 4 16" width="4" height="16" fill="currentColor" aria-hidden="true">' +
-      '<circle cx="2" cy="2"  r="1.5"/>' +
-      '<circle cx="2" cy="8"  r="1.5"/>' +
-      '<circle cx="2" cy="14" r="1.5"/>' +
-    '</svg>';
+    dotsBtn.innerHTML =
+      '<svg viewBox="0 0 4 16" width="4" height="16" fill="currentColor" aria-hidden="true">' +
+        '<circle cx="2" cy="2"  r="1.5"/>' +
+        '<circle cx="2" cy="8"  r="1.5"/>' +
+        '<circle cx="2" cy="14" r="1.5"/>' +
+      '</svg>';
 
+    /* ── Build dropdown ── */
     var dropdown = document.createElement('div');
     dropdown.className = 'dps-dots-dropdown';
     dropdown.style.display = 'none';
@@ -236,47 +278,34 @@
     wrap.appendChild(dotsBtn);
     wrap.appendChild(dropdown);
 
-    /* ── Toggle dropdown on dots click ── */
+    /* ── Toggle on dots click (stop propagation — don't open project) ── */
     dotsBtn.addEventListener('click', function (e) {
       e.stopPropagation();
       var isOpen = dropdown.style.display !== 'none';
-      /* Close all other open dropdowns first */
       closeAllDropdowns();
       if (!isOpen) dropdown.style.display = 'block';
     });
 
-    /* ── Rename action ── */
+    /* ── Rename ── */
     dropdown.querySelector('.dps-dd-rename').addEventListener('click', function (e) {
       e.stopPropagation();
       dropdown.style.display = 'none';
-      _doRename(card, projectId);
+      _doRename(card, projectId, cached.rename);
     });
 
-    /* ── Delete action ── */
+    /* ── Delete ── */
     dropdown.querySelector('.dps-dd-delete').addEventListener('click', function (e) {
       e.stopPropagation();
       dropdown.style.display = 'none';
-      _doDelete(card);
+      _doDelete(card, projectId, cached.delete);
     });
 
-    /* ── Inject into card ──
-       Try to place it inside a card header row if one exists,
-       otherwise append to the card itself.                       */
-    var header =
-      card.querySelector('.dps-card-header') ||
-      card.querySelector('.dps-card-top') ||
-      card.querySelector('.dps-card-body');
-
-    if (header) {
-      /* Make sure the header can hold an absolutely-positioned dropdown */
-      var hPos = window.getComputedStyle(header).position;
-      if (hPos === 'static') header.style.position = 'relative';
-      header.appendChild(wrap);
-    } else {
-      var cardPos = window.getComputedStyle(card).position;
-      if (cardPos === 'static') card.style.position = 'relative';
-      card.appendChild(wrap);
+    /* ── Attach to card body (prefer .dps-card-body, else card root) ── */
+    var host = card.querySelector('.dps-card-body') || card;
+    if (window.getComputedStyle(host).position === 'static') {
+      host.style.position = 'relative';
     }
+    host.appendChild(wrap);
   }
 
   function closeAllDropdowns() {
