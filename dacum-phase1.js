@@ -261,10 +261,10 @@
     dotsBtn.title = 'Project options';
     dotsBtn.setAttribute('aria-label', 'Project options');
     dotsBtn.innerHTML =
-      '<svg viewBox="0 0 4 16" width="4" height="16" fill="currentColor" aria-hidden="true">' +
-        '<circle cx="2" cy="2"  r="1.5"/>' +
-        '<circle cx="2" cy="8"  r="1.5"/>' +
-        '<circle cx="2" cy="14" r="1.5"/>' +
+      '<svg viewBox="0 0 16 4" width="16" height="4" fill="currentColor" aria-hidden="true">' +
+        '<circle cx="2"  cy="2" r="1.6"/>' +
+        '<circle cx="8"  cy="2" r="1.6"/>' +
+        '<circle cx="14" cy="2" r="1.6"/>' +
       '</svg>';
 
     /* ── Build dropdown ── */
@@ -283,7 +283,10 @@
       e.stopPropagation();
       var isOpen = dropdown.style.display !== 'none';
       closeAllDropdowns();
-      if (!isOpen) dropdown.style.display = 'block';
+      if (!isOpen) {
+        dropdown.style.display = 'block';
+        positionDropdown(dotsBtn, dropdown);
+      }
     });
 
     /* ── Rename ── */
@@ -312,6 +315,20 @@
     document.querySelectorAll('.dps-dots-dropdown').forEach(function (dd) {
       dd.style.display = 'none';
     });
+  }
+
+  /* TASK 2: smart auto-flip — show dropdown above if not enough space below */
+  function positionDropdown(dotsBtn, dropdown) {
+    var rect = dotsBtn.getBoundingClientRect();
+    var spaceBelow = window.innerHeight - rect.bottom;
+    var dropdownH = 90; /* approx height of 2-item dropdown */
+    if (spaceBelow < dropdownH) {
+      dropdown.style.top    = 'auto';
+      dropdown.style.bottom = '30px';
+    } else {
+      dropdown.style.top    = '30px';
+      dropdown.style.bottom = 'auto';
+    }
   }
 
   /* ── STEP 6: Observe project list for new cards ──────────────
@@ -364,9 +381,12 @@
     });
   }
 
-  /* ── Close dropdowns on outside click / Escape ──────────────── */
+  /* ── TASK 5: Close dropdowns on outside click / Escape ──────── */
   document.addEventListener('click', function (e) {
-    if (!e.target.closest('.dps-dots-wrap')) closeAllDropdowns();
+    if (!e.target.closest('.dps-dots-wrap') &&
+        !e.target.closest('.dps-dots-dropdown')) {
+      closeAllDropdowns();
+    }
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') closeAllDropdowns();
