@@ -132,13 +132,11 @@
     }
   }
 
-  /* ── STEP 5: Three-dots menu injection ───────────────────────
-     For each project card:
-       a) _hideNativeActions()  — hides original rename/delete
-          buttons rendered by dacum_projects.js. They stay in the
-          DOM so .click() delegation keeps working.
-       b) injectDotsMenu()      — injects a single .dps-dots-wrap
-          (idempotent: skips cards that already have one).        */
+  /* ── STEP 5: Inject pencil (rename) + delete buttons into each card ──
+     Matches the original card design: two stacked icon buttons top-right.
+     Pencil → makes title contenteditable; blur or Enter commits.
+     Delete → delegates to hidden native delete button (preserves logic).
+     Idempotent.                                                          */
 
   function _findCardId(card) {
     return card.dataset.projectId ||
@@ -147,13 +145,10 @@
            null;
   }
 
-  /* Find a button inside `root` whose visible text/title matches
-     any keyword. Searches ALL buttons including hidden ones.     */
   function _findBtn(root, keywords) {
     var btns = root.querySelectorAll('button');
     for (var i = 0; i < btns.length; i++) {
-      /* Skip our own injected buttons */
-      if (btns[i].closest('.dps-dots-wrap')) continue;
+      if (btns[i].closest('.dps-card-actions-wrap')) continue;
       var t = (btns[i].textContent + ' ' + (btns[i].title || '')).toLowerCase();
       for (var k = 0; k < keywords.length; k++) {
         if (t.indexOf(keywords[k]) !== -1) return btns[i];
@@ -162,17 +157,11 @@
     return null;
   }
 
-  /* Hide all native action buttons/containers in a card.
-     Returns an object with cached references to the hidden
-     rename and delete buttons so delegation still works.        */
   function _hideNativeActions(card) {
     var cached = { rename: null, delete: null };
-
-    /* Cache before hiding */
     cached.rename = _findBtn(card, ['rename', 'edit', '✏']);
     cached.delete = _findBtn(card, ['delete', 'remove', '🗑', '✕', '×', 'trash']);
 
-    /* Hide any dedicated action-row containers */
     var actionSelectors = [
       '.dps-card-actions', '.dps-card-footer', '.dps-card-btns',
       '.dps-card-controls', '.dps-card-buttons', '.dps-card-action-row',
@@ -180,130 +169,140 @@
       '[class*="card-control"]', '[class*="card-footer"]'
     ];
     actionSelectors.forEach(function (sel) {
-      card.querySelectorAll(sel).forEach(function (el) {
-        el.style.display = 'none';
-      });
+      card.querySelectorAll(sel).forEach(function (el) { el.style.display = 'none'; });
     });
 
-    /* Hide any remaining bare buttons in the card body that
-       aren't our dots button and aren't already inside a
-       hidden container                                          */
     var cardBody = card.querySelector('.dps-card-body') || card;
     cardBody.querySelectorAll('button').forEach(function (btn) {
-      if (btn.closest('.dps-dots-wrap')) return;   /* ours — skip */
+      if (btn.closest('.dps-card-actions-wrap')) return;
       btn.style.display = 'none';
     });
-
     return cached;
   }
 
-  function _doRename(card, projectId, cachedBtn) {
-    /* 1. Global module function if exposed */
-    if (typeof window.renameProject === 'function') {
-      var nameEl =
-        card.querySelector('.dps-card-name') ||
-        card.querySelector('.dps-project-name') ||
-        card.querySelector('[class*="name"]');
-      var cur = nameEl ? nameEl.textContent.trim() : '';
-      var next = window.prompt('Rename project:', cur);
-      if (next && next.trim()) window.renameProject(projectId, next.trim());
-      return;
-    }
-
-    /* 2. Click the cached native rename button (hidden but clickable) */
-    if (cachedBtn) { cachedBtn.click(); return; }
-
-    /* 3. Last resort: prompt + patch visible name node */
+  /* ── Inline rename: make title editable, commit on blur/Enter ── */
+  function _startInlineRename(card, projectId, cachedBtn) {
     var nameEl =
       card.querySelector('.dps-card-name') ||
       card.querySelector('.dps-project-name') ||
-      card.querySelector('[class*="name"]');
-    var cur = nameEl ? nameEl.textContent.trim() : '';
-    var next = window.prompt('Rename project:', cur);
-    if (next && next.trim() && nameEl) nameEl.textContent = next.trim();
+      card.querySelector('[class*="card-title"]') ||
+      card.querySelector('[class*="project-name"]') ||
+      card.querySelector('[class*="card-name"]');
+
+    if (!nameEl) {
+      /* Fallback: native button or global */
+      if (cachedBtn) { cachedBtn.click(); return; }
+      if (typeof window.renameProject === 'function') {
+        var cur2 = '';
+        var next2 = window.prompt('Rename project:', cur2);
+        if (next2 && next2.trim()) window.renameProject(projectId, next2.trim());
+      }
+      return;
+    }
+
+    if (nameEl.getAttribute('contenteditable') === 'true') return; /* already editing */
+
+    var original = nameEl.textContent.trim();
+    nameEl.setAttribute('contenteditable', 'true');
+    nameEl.classList.add('dps-title-editing');
+    nameEl.focus();
+
+    /* Select all text */
+    var range = document.createRange();
+    range.selectNodeContents(nameEl);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    function _commit() {
+      var newName = nameEl.textContent.trim();
+      nameEl.setAttribute('contenteditable', 'false');
+      nameEl.classList.remove('dps-title-editing');
+      if (!newName) { nameEl.textContent = original; return; }
+      if (newName === original) return;
+
+      /* Prefer global module function */
+      if (typeof window.renameProject === 'function') {
+        window.renameProject(projectId, newName);
+      } else if (cachedBtn) {
+        /* Restore original text and let native handler take over */
+        nameEl.textContent = original;
+        cachedBtn.click();
+      }
+    }
+
+    function _onKey(e) {
+      if (e.key === 'Enter') { e.preventDefault(); _commit(); nameEl.removeEventListener('keydown', _onKey); }
+      if (e.key === 'Escape') {
+        nameEl.textContent = original;
+        nameEl.setAttribute('contenteditable', 'false');
+        nameEl.classList.remove('dps-title-editing');
+        nameEl.removeEventListener('keydown', _onKey);
+      }
+    }
+
+    nameEl.addEventListener('keydown', _onKey);
+    nameEl.addEventListener('blur', function _onBlur() {
+      nameEl.removeEventListener('keydown', _onKey);
+      nameEl.removeEventListener('blur', _onBlur);
+      _commit();
+    });
+
+    /* Stop click-on-card from triggering project open while editing */
+    nameEl.addEventListener('click', function(e) { e.stopPropagation(); }, { once: true });
   }
 
   function _doDelete(card, projectId, cachedBtn) {
-    /* 1. Click the cached native delete button (hidden but clickable) */
     if (cachedBtn) { cachedBtn.click(); return; }
-
-    /* 2. Global module function if exposed */
     if (typeof window.deleteProject === 'function') {
       if (window.confirm('Delete this project? This cannot be undone.')) {
         window.deleteProject(projectId);
       }
       return;
     }
-
-    /* 3. Last resort: search again in case DOM changed */
     var btn = _findBtn(card, ['delete', 'remove', '🗑', '✕', 'trash']);
     if (btn) btn.click();
   }
 
-  function injectDotsMenu(card) {
-    /* Idempotent — skip if dots menu already present */
-    if (card.querySelector('.dps-dots-wrap')) return;
-
-    /* Skip non-card elements that match our broad selector */
+  function injectCardActions(card) {
+    if (card.querySelector('.dps-card-actions-wrap')) return; /* idempotent */
     if (!card.closest('#dacumProjectsSidebar')) return;
 
     var projectId = _findCardId(card);
-
-    /* Hide native buttons FIRST, cache references for delegation */
     var cached = _hideNativeActions(card);
 
-    /* ── Build dots button ── */
+    /* ── Wrapper: two buttons stacked ── */
     var wrap = document.createElement('div');
-    wrap.className = 'dps-dots-wrap';
+    wrap.className = 'dps-card-actions-wrap';
 
-    var dotsBtn = document.createElement('button');
-    dotsBtn.className = 'dps-dots-btn';
-    dotsBtn.title = 'Project options';
-    dotsBtn.setAttribute('aria-label', 'Project options');
-    dotsBtn.innerHTML =
-      '<svg viewBox="0 0 16 4" width="16" height="4" fill="currentColor" aria-hidden="true">' +
-        '<circle cx="2"  cy="2" r="1.6"/>' +
-        '<circle cx="8"  cy="2" r="1.6"/>' +
-        '<circle cx="14" cy="2" r="1.6"/>' +
-      '</svg>';
+    /* Pencil button */
+    var pencilBtn = document.createElement('button');
+    pencilBtn.className = 'dps-card-btn dps-card-btn-rename';
+    pencilBtn.title = 'Rename project';
+    pencilBtn.setAttribute('aria-label', 'Rename project');
+    pencilBtn.innerHTML = '✏️';
 
-    /* ── Build dropdown ── */
-    var dropdown = document.createElement('div');
-    dropdown.className = 'dps-dots-dropdown';
-    dropdown.style.display = 'none';
-    dropdown.innerHTML =
-      '<button class="dps-dd-rename">✏️&nbsp; Rename Project</button>' +
-      '<button class="dps-dd-delete">🗑️&nbsp; Delete Project</button>';
+    /* Delete button */
+    var deleteBtn = document.createElement('button');
+    deleteBtn.className = 'dps-card-btn dps-card-btn-delete';
+    deleteBtn.title = 'Delete project';
+    deleteBtn.setAttribute('aria-label', 'Delete project');
+    deleteBtn.innerHTML = '✕';
 
-    wrap.appendChild(dotsBtn);
-    wrap.appendChild(dropdown);
+    wrap.appendChild(pencilBtn);
+    wrap.appendChild(deleteBtn);
 
-    /* ── Toggle on dots click (stop propagation — don't open project) ── */
-    dotsBtn.addEventListener('click', function (e) {
+    pencilBtn.addEventListener('click', function (e) {
       e.stopPropagation();
-      var isOpen = dropdown.style.display !== 'none';
-      closeAllDropdowns();
-      if (!isOpen) {
-        dropdown.style.display = 'block';
-        positionDropdown(dotsBtn, dropdown);
-      }
+      _startInlineRename(card, projectId, cached.rename);
     });
 
-    /* ── Rename ── */
-    dropdown.querySelector('.dps-dd-rename').addEventListener('click', function (e) {
+    deleteBtn.addEventListener('click', function (e) {
       e.stopPropagation();
-      dropdown.style.display = 'none';
-      _doRename(card, projectId, cached.rename);
-    });
-
-    /* ── Delete ── */
-    dropdown.querySelector('.dps-dd-delete').addEventListener('click', function (e) {
-      e.stopPropagation();
-      dropdown.style.display = 'none';
       _doDelete(card, projectId, cached.delete);
     });
 
-    /* ── Attach to card body (prefer .dps-card-body, else card root) ── */
+    /* Attach to card body */
     var host = card.querySelector('.dps-card-body') || card;
     if (window.getComputedStyle(host).position === 'static') {
       host.style.position = 'relative';
@@ -311,47 +310,18 @@
     host.appendChild(wrap);
   }
 
-  function closeAllDropdowns() {
-    document.querySelectorAll('.dps-dots-dropdown').forEach(function (dd) {
-      dd.style.display = 'none';
-    });
-  }
-
-  /* TASK 2: smart auto-flip — show dropdown above if not enough space below */
-  function positionDropdown(dotsBtn, dropdown) {
-    var rect = dotsBtn.getBoundingClientRect();
-    var spaceBelow = window.innerHeight - rect.bottom;
-    var dropdownH = 90; /* approx height of 2-item dropdown */
-    if (spaceBelow < dropdownH) {
-      dropdown.style.top    = 'auto';
-      dropdown.style.bottom = '30px';
-    } else {
-      dropdown.style.top    = '30px';
-      dropdown.style.bottom = 'auto';
-    }
-  }
-
-  /* ── STEP 6: Observe project list for new cards ──────────────
-     Called once the sidebar is ready. Attaches a MutationObserver
-     to re-run injectDotsMenu whenever new cards are added.       */
-
+  /* ── STEP 6: Observe project list for new cards ── */
   function observeProjectCards(sidebar) {
-    /* Initial pass */
-    sidebar.querySelectorAll('.dps-card, [data-project-id], [data-id]').forEach(injectDotsMenu);
+    sidebar.querySelectorAll('.dps-card, [data-project-id], [data-id]').forEach(injectCardActions);
 
-    /* Observe for dynamically added cards */
     var observer = new MutationObserver(function (mutations) {
       mutations.forEach(function (m) {
         m.addedNodes.forEach(function (node) {
           if (node.nodeType !== 1) return;
-          if (
-            node.classList.contains('dps-card') ||
-            node.dataset.projectId ||
-            node.dataset.id
-          ) {
-            injectDotsMenu(node);
+          if (node.classList.contains('dps-card') || node.dataset.projectId || node.dataset.id) {
+            injectCardActions(node);
           }
-          node.querySelectorAll('.dps-card, [data-project-id], [data-id]').forEach(injectDotsMenu);
+          node.querySelectorAll('.dps-card, [data-project-id], [data-id]').forEach(injectCardActions);
         });
       });
     });
@@ -380,17 +350,6 @@
       attributeFilter: ['class']
     });
   }
-
-  /* ── TASK 5: Close dropdowns on outside click / Escape ──────── */
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest('.dps-dots-wrap') &&
-        !e.target.closest('.dps-dots-dropdown')) {
-      closeAllDropdowns();
-    }
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeAllDropdowns();
-  });
 
   /* ── Main init: run all steps once sidebar is in DOM ─────────── */
   function _init(sidebar) {
