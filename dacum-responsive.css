@@ -58,24 +58,32 @@ body {
   display: none;
   align-items: center;
   justify-content: center;
-  width: 34px;
+  gap: 6px;
   height: 34px;
-  padding: 0;
-  background: rgba(255,255,255,0.15);
-  border: 1.5px solid rgba(255,255,255,0.40);
-  border-radius: 7px;
-  color: #f1f5f9;
+  padding: 0 12px 0 10px;
+  background: #4f46e5;
+  border: 1.5px solid #6366f1;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.82em;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
-  transition: background 0.13s, border-color 0.13s, color 0.13s;
+  box-shadow: 0 2px 8px rgba(79,70,229,0.45);
+  transition: background 0.13s, box-shadow 0.13s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+#btnReopenSidebar svg {
   flex-shrink: 0;
 }
 #btnReopenSidebar:hover {
-  background: rgba(255,255,255,0.28);
-  border-color: rgba(255,255,255,0.65);
-  color: #fff;
+  background: #4338ca;
+  border-color: #818cf8;
+  box-shadow: 0 3px 12px rgba(79,70,229,0.6);
   transform: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+#btnReopenSidebar:active {
+  transform: scale(0.96);
 }
 
 /* Show when sidebar is force-hidden (desktop collapsed) */

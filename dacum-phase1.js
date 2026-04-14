@@ -165,7 +165,7 @@
     var actionSelectors = [
       '.dps-card-actions', '.dps-card-footer', '.dps-card-btns',
       '.dps-card-controls', '.dps-card-buttons', '.dps-card-action-row',
-      '.dps-btn-row', '[class*="card-action"]', '[class*="card-btn"]',
+      '.dps-btn-row', '[class*="card-action"]',
       '[class*="card-control"]', '[class*="card-footer"]'
     ];
     actionSelectors.forEach(function (sel) {
