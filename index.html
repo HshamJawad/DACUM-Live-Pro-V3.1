@@ -270,6 +270,16 @@
         display: none !important;
       }
 
+      /* Hide inline rename input (the bordered duplicate title box) */
+      #dacumProjectsSidebar .dps-card-body input[type="text"],
+      #dacumProjectsSidebar .dps-card-body input:not([type]),
+      #dacumProjectsSidebar [data-project-id] input[type="text"],
+      #dacumProjectsSidebar [data-project-id] input:not([type]),
+      #dacumProjectsSidebar [data-id] input[type="text"],
+      #dacumProjectsSidebar [data-id] input:not([type]) {
+        display: none !important;
+      }
+
       /* Any bare button directly inside a card body or card root
          that is NOT our dots button, NOT a hidden-sentinel */
       #dacumProjectsSidebar .dps-card-body > button:not(.dps-dots-btn),
@@ -328,7 +338,7 @@
         position: absolute;
         right: 0;
         top: 30px;
-        min-width: 152px;
+        min-width: 172px;
         background: #1e1e2f;
         border: 1px solid rgba(255,255,255,0.12);
         border-radius: 10px;
@@ -360,6 +370,7 @@
         box-shadow: none !important;
         transform: none !important;
         min-height: unset !important;
+        white-space: nowrap !important;
       }
       .dps-dots-dropdown button:hover {
         background: rgba(255,255,255,0.09) !important;
