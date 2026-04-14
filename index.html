@@ -249,55 +249,36 @@
         padding: 10px 16px 5px;
       }
 
-      /* ── Suppress native project card action buttons ────────────
-         dacum_projects.js bakes rename/delete buttons into each
-         card. CSS hides them; .click() delegation in phase1.js
-         still fires the hidden buttons so all logic is preserved.
-         Scoped strictly to #dacumProjectsSidebar.               */
-
-      /* Named action containers the module may render */
+      /* ── Hide native project card action elements ────────────────
+         JS (_hideNativeActions) already hides native buttons via
+         style.display. These CSS rules are a fast-path pre-hide
+         for known container class names ONLY — no wildcards that
+         could match our own injected elements.                   */
       #dacumProjectsSidebar .dps-card-actions,
-      #dacumProjectsSidebar .dps-card-footer,
       #dacumProjectsSidebar .dps-card-btns,
       #dacumProjectsSidebar .dps-card-controls,
       #dacumProjectsSidebar .dps-card-buttons,
       #dacumProjectsSidebar .dps-card-action-row,
-      #dacumProjectsSidebar .dps-btn-row,
-      #dacumProjectsSidebar [class*="card-action"],
-      #dacumProjectsSidebar [class*="card-control"],
-      #dacumProjectsSidebar [class*="card-footer"] {
+      #dacumProjectsSidebar .dps-btn-row {
         display: none !important;
       }
-      /* Override: always show our own action wrap */
+      /* Override: always show our injected action wrap */
       #dacumProjectsSidebar .dps-card-actions-wrap {
         display: flex !important;
       }
 
-      /* Hide inline rename input (the bordered duplicate title box) */
+      /* Hide the native inline rename input (duplicate title box) */
       #dacumProjectsSidebar .dps-card-body input[type="text"],
       #dacumProjectsSidebar .dps-card-body input:not([type]),
       #dacumProjectsSidebar [data-project-id] input[type="text"],
-      #dacumProjectsSidebar [data-project-id] input:not([type]),
-      #dacumProjectsSidebar [data-id] input[type="text"],
-      #dacumProjectsSidebar [data-id] input:not([type]) {
+      #dacumProjectsSidebar [data-project-id] input:not([type]) {
         display: none !important;
       }
 
-      /* Any bare button directly inside a card body or card root
-         that is NOT our action buttons */
-      #dacumProjectsSidebar .dps-card-body > button:not(.dps-card-btn),
-      #dacumProjectsSidebar .dps-card-body > a,
-      #dacumProjectsSidebar [data-project-id] > button:not(.dps-card-btn),
-      #dacumProjectsSidebar [data-id] > button:not(.dps-card-btn),
-      #dacumProjectsSidebar .dps-card > button:not(.dps-card-btn) {
-        display: none !important;
-      }
-
-      /* Guarantee relative positioning so dots menu positions correctly */
+      /* Relative positioning for action button placement */
       #dacumProjectsSidebar .dps-card-body,
       #dacumProjectsSidebar .dps-card,
-      #dacumProjectsSidebar [data-project-id],
-      #dacumProjectsSidebar [data-id] {
+      #dacumProjectsSidebar [data-project-id] {
         position: relative !important;
       }
 

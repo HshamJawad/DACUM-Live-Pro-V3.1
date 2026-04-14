@@ -132,11 +132,22 @@
     }
   }
 
-  /* ── STEP 5: Inject pencil (rename) + delete buttons into each card ──
-     Matches the original card design: two stacked icon buttons top-right.
-     Pencil → makes title contenteditable; blur or Enter commits.
-     Delete → delegates to hidden native delete button (preserves logic).
-     Idempotent.                                                          */
+  /* ── STEP 5: Card action buttons — pencil (rename) + delete ─────
+     Root-cause fixes applied:
+     • dataset.dphActionsInjected  — O(1) idempotency, survives
+       batched observer calls that querySelector misses
+     • Debounced observer callback — processes all added nodes in
+       one tick; eliminates double-injection from parent/child
+       both carrying data-project-id / data-id attributes
+     • _persistRename()            — writes directly to
+       localStorage('dacum_projects') so rename survives re-render
+     • No cachedBtn.click() on rename — avoids triggering the
+       hidden native input flow that reverts the name              */
+
+  /* Hoisted so injectCardActions can reference the observer     */
+  var _cardObserver = null;
+  var _pendingCards = [];
+  var _processTimer = null;
 
   function _findCardId(card) {
     return card.dataset.projectId ||
@@ -158,8 +169,9 @@
   }
 
   function _hideNativeActions(card) {
-    var cached = { rename: null, delete: null };
-    cached.rename = _findBtn(card, ['rename', 'edit', '✏']);
+    var cached = { delete: null };
+    /* Cache delete button for delegation — do NOT cache rename,
+       we handle rename ourselves via localStorage               */
     cached.delete = _findBtn(card, ['delete', 'remove', '🗑', '✕', '×', 'trash']);
 
     var actionSelectors = [
@@ -169,71 +181,110 @@
       '[class*="card-control"]', '[class*="card-footer"]'
     ];
     actionSelectors.forEach(function (sel) {
-      card.querySelectorAll(sel).forEach(function (el) { el.style.display = 'none'; });
+      card.querySelectorAll(sel).forEach(function (el) {
+        el.style.display = 'none';
+      });
     });
 
+    /* Hide native buttons but NOT our own injected buttons */
     var cardBody = card.querySelector('.dps-card-body') || card;
     cardBody.querySelectorAll('button').forEach(function (btn) {
       if (btn.closest('.dps-card-actions-wrap')) return;
       btn.style.display = 'none';
     });
+
     return cached;
   }
 
-  /* ── Inline rename: make title editable, commit on blur/Enter ── */
-  function _startInlineRename(card, projectId, cachedBtn) {
+  /* ── Persist rename to localStorage (source of truth) ─────── */
+  function _persistRename(projectId, newName) {
+    try {
+      var raw = localStorage.getItem('dacum_projects');
+      if (!raw) return false;
+      var projects = JSON.parse(raw);
+      var found = false;
+      for (var i = 0; i < projects.length; i++) {
+        if (String(projects[i].id) === String(projectId)) {
+          projects[i].name = newName;
+          found = true;
+          break;
+        }
+      }
+      if (found) {
+        localStorage.setItem('dacum_projects', JSON.stringify(projects));
+        console.log('[DPH1] Renamed:', projectId, '->', newName);
+      }
+      return found;
+    } catch (e) {
+      console.warn('[DPH1] Rename persist failed:', e);
+      return false;
+    }
+  }
+
+  /* ── Inline rename: contenteditable on title element ────────── */
+  function _startInlineRename(card, projectId) {
+    /* Exclude elements inside our own action wrap */
     var nameEl =
-      card.querySelector('.dps-card-name') ||
-      card.querySelector('.dps-project-name') ||
-      card.querySelector('[class*="card-title"]') ||
-      card.querySelector('[class*="project-name"]') ||
-      card.querySelector('[class*="card-name"]');
+      card.querySelector('.dps-card-name:not(.dps-card-actions-wrap *)') ||
+      card.querySelector('.dps-project-name:not(.dps-card-actions-wrap *)') ||
+      card.querySelector('[class*="card-title"]:not(.dps-card-actions-wrap *)') ||
+      card.querySelector('[class*="project-name"]:not(.dps-card-actions-wrap *)') ||
+      card.querySelector('[class*="card-name"]:not(.dps-card-actions-wrap *)');
 
     if (!nameEl) {
-      /* Fallback: native button or global */
-      if (cachedBtn) { cachedBtn.click(); return; }
-      if (typeof window.renameProject === 'function') {
-        var cur2 = '';
-        var next2 = window.prompt('Rename project:', cur2);
-        if (next2 && next2.trim()) window.renameProject(projectId, next2.trim());
+      /* Fallback: prompt */
+      var fallback = window.prompt('Rename project:',
+        card.querySelector('[class*="name"]') ? card.querySelector('[class*="name"]').textContent.trim() : '');
+      if (fallback && fallback.trim()) {
+        _persistRename(projectId, fallback.trim());
+        if (typeof window.renameProject === 'function') {
+          window.renameProject(projectId, fallback.trim());
+        }
       }
       return;
     }
 
-    if (nameEl.getAttribute('contenteditable') === 'true') return; /* already editing */
+    if (nameEl.getAttribute('contenteditable') === 'true') return;
 
     var original = nameEl.textContent.trim();
     nameEl.setAttribute('contenteditable', 'true');
     nameEl.classList.add('dps-title-editing');
     nameEl.focus();
 
-    /* Select all text */
     var range = document.createRange();
     range.selectNodeContents(nameEl);
     var sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
 
+    var _committed = false;
     function _commit() {
+      if (_committed) return;
+      _committed = true;
       var newName = nameEl.textContent.trim();
       nameEl.setAttribute('contenteditable', 'false');
       nameEl.classList.remove('dps-title-editing');
       if (!newName) { nameEl.textContent = original; return; }
       if (newName === original) return;
 
-      /* Prefer global module function */
+      /* 1. Write to localStorage — primary persistence */
+      _persistRename(projectId, newName);
+
+      /* 2. Notify module if it exposes a global handler */
       if (typeof window.renameProject === 'function') {
         window.renameProject(projectId, newName);
-      } else if (cachedBtn) {
-        /* Restore original text and let native handler take over */
-        nameEl.textContent = original;
-        cachedBtn.click();
       }
+      /* DOM name already shows newName via contenteditable — done */
     }
 
     function _onKey(e) {
-      if (e.key === 'Enter') { e.preventDefault(); _commit(); nameEl.removeEventListener('keydown', _onKey); }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        nameEl.removeEventListener('keydown', _onKey);
+        _commit();
+      }
       if (e.key === 'Escape') {
+        _committed = true; /* prevent blur from committing */
         nameEl.textContent = original;
         nameEl.setAttribute('contenteditable', 'false');
         nameEl.classList.remove('dps-title-editing');
@@ -248,8 +299,7 @@
       _commit();
     });
 
-    /* Stop click-on-card from triggering project open while editing */
-    nameEl.addEventListener('click', function(e) { e.stopPropagation(); }, { once: true });
+    nameEl.addEventListener('click', function (e) { e.stopPropagation(); }, { once: true });
   }
 
   function _doDelete(card, projectId, cachedBtn) {
@@ -265,24 +315,26 @@
   }
 
   function injectCardActions(card) {
-    if (card.querySelector('.dps-card-actions-wrap')) return; /* idempotent */
+    /* ── Idempotency: dataset flag is set IMMEDIATELY (before any
+       async gap) so batched calls in the same tick are blocked   */
+    if (card.dataset.dphActionsInjected) return;
     if (!card.closest('#dacumProjectsSidebar')) return;
+
+    card.dataset.dphActionsInjected = '1';
+    console.log('[DPH1] Render project:', card.dataset.projectId || card.dataset.id);
 
     var projectId = _findCardId(card);
     var cached = _hideNativeActions(card);
 
-    /* ── Wrapper: two buttons stacked ── */
     var wrap = document.createElement('div');
     wrap.className = 'dps-card-actions-wrap';
 
-    /* Pencil button */
     var pencilBtn = document.createElement('button');
     pencilBtn.className = 'dps-card-btn dps-card-btn-rename';
     pencilBtn.title = 'Rename project';
     pencilBtn.setAttribute('aria-label', 'Rename project');
     pencilBtn.innerHTML = '✏️';
 
-    /* Delete button */
     var deleteBtn = document.createElement('button');
     deleteBtn.className = 'dps-card-btn dps-card-btn-delete';
     deleteBtn.title = 'Delete project';
@@ -294,7 +346,7 @@
 
     pencilBtn.addEventListener('click', function (e) {
       e.stopPropagation();
-      _startInlineRename(card, projectId, cached.rename);
+      _startInlineRename(card, projectId);
     });
 
     deleteBtn.addEventListener('click', function (e) {
@@ -302,7 +354,6 @@
       _doDelete(card, projectId, cached.delete);
     });
 
-    /* Attach to card body */
     var host = card.querySelector('.dps-card-body') || card;
     if (window.getComputedStyle(host).position === 'static') {
       host.style.position = 'relative';
@@ -310,23 +361,52 @@
     host.appendChild(wrap);
   }
 
-  /* ── STEP 6: Observe project list for new cards ── */
+  /* ── STEP 6: Observe project list for new cards ─────────────
+     Debounced: collects all added cards in one tick, deduplicates,
+     then processes — eliminates double-injection from parent+child
+     both matching the selector in the same mutation batch.       */
   function observeProjectCards(sidebar) {
-    sidebar.querySelectorAll('.dps-card, [data-project-id], [data-id]').forEach(injectCardActions);
+    /* Initial pass — select by data-project-id only (root cards) */
+    sidebar.querySelectorAll('[data-project-id]').forEach(injectCardActions);
+    /* Also catch class-based cards */
+    sidebar.querySelectorAll('.dps-card:not([data-project-id])').forEach(injectCardActions);
 
-    var observer = new MutationObserver(function (mutations) {
+    _cardObserver = new MutationObserver(function (mutations) {
       mutations.forEach(function (m) {
         m.addedNodes.forEach(function (node) {
           if (node.nodeType !== 1) return;
-          if (node.classList.contains('dps-card') || node.dataset.projectId || node.dataset.id) {
-            injectCardActions(node);
+          /* Direct match */
+          if ((node.dataset && node.dataset.projectId) ||
+              (node.classList && node.classList.contains('dps-card'))) {
+            _pendingCards.push(node);
           }
-          node.querySelectorAll('.dps-card, [data-project-id], [data-id]').forEach(injectCardActions);
+          /* One level deep only — avoids re-matching nested elements
+             that also carry data-project-id / data-id              */
+          Array.prototype.forEach.call(node.children || [], function (child) {
+            if ((child.dataset && child.dataset.projectId) ||
+                (child.classList && child.classList.contains('dps-card'))) {
+              _pendingCards.push(child);
+            }
+          });
         });
       });
+
+      /* Debounce: process all in one tick after mutations settle */
+      clearTimeout(_processTimer);
+      _processTimer = setTimeout(function () {
+        var toProcess = _pendingCards.slice();
+        _pendingCards = [];
+        var seen = [];
+        toProcess.forEach(function (card) {
+          if (seen.indexOf(card) === -1) {
+            seen.push(card);
+            injectCardActions(card);
+          }
+        });
+      }, 0);
     });
 
-    observer.observe(sidebar, { childList: true, subtree: true });
+    _cardObserver.observe(sidebar, { childList: true, subtree: true });
   }
 
   /* ── STEP 7: Sync toolbar class for re-open button fallback ──
