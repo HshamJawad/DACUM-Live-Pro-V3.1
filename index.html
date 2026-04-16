@@ -16,14 +16,114 @@
 
     <!-- Service Worker -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-          navigator.serviceWorker
-            .register('/DACUM-Live-Pro-V3.0/sw.js', { scope: '/DACUM-Live-Pro-V3.0/' })
-            .then(function (r) { console.log('[PWA] SW registered', r.scope); })
-            .catch(function (e) { console.warn('[PWA] SW failed', e); });
-        });
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+
+      /* ── Prevent infinite reload loops ─────────────────────── */
+      var _reloadKey   = 'dacum_sw_reload_ts';
+      var _minInterval = 15000; // ms — never reload more than once per 15s
+
+      function _canReload() {
+        try {
+          var last = parseInt(sessionStorage.getItem(_reloadKey) || '0', 10);
+          return (Date.now() - last) > _minInterval;
+        } catch (e) { return true; }
       }
+      function _markReload() {
+        try { sessionStorage.setItem(_reloadKey, String(Date.now())); } catch (e) {}
+      }
+
+      /* ── Update toast UI ────────────────────────────────────── */
+      function _showUpdateToast(version) {
+        if (document.getElementById('dacumUpdateToast')) return;
+        var toast = document.createElement('div');
+        toast.id = 'dacumUpdateToast';
+        toast.style.cssText =
+          'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+          'background:linear-gradient(135deg,#667eea,#764ba2);' +
+          'color:#fff;padding:12px 22px;border-radius:12px;' +
+          'font-size:0.88em;font-weight:600;font-family:inherit;' +
+          'box-shadow:0 6px 24px rgba(102,126,234,0.45);' +
+          'z-index:999999;display:flex;align-items:center;gap:10px;' +
+          'animation:dacumToastIn 0.3s cubic-bezier(.16,1,.3,1);' +
+          'max-width:90vw;text-align:center;';
+        toast.innerHTML =
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"' +
+          ' stroke="currentColor" stroke-width="2.5" stroke-linecap="round"' +
+          ' stroke-linejoin="round" style="flex-shrink:0">' +
+          '<polyline points="23 4 23 10 17 10"/>' +
+          '<path d="M20.49 15a9 9 0 1 1-.07-8.4"/></svg>' +
+          '<span>New version available — updating…</span>';
+
+        if (!document.getElementById('dacumToastKeyframes')) {
+          var ks = document.createElement('style');
+          ks.id = 'dacumToastKeyframes';
+          ks.textContent =
+            '@keyframes dacumToastIn{from{opacity:0;transform:translateX(-50%) translateY(16px)}' +
+            'to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+          document.head.appendChild(ks);
+        }
+
+        document.body.appendChild(toast);
+        console.log('[PWA] Update toast shown — version', version);
+      }
+
+      /* ── Handle message from SW ─────────────────────────────── */
+      navigator.serviceWorker.addEventListener('message', function (event) {
+        if (!event.data || event.data.type !== 'SW_UPDATED') return;
+        console.log('[PWA] SW_UPDATED received, version:', event.data.version);
+        if (!_canReload()) {
+          console.log('[PWA] Reload suppressed (too soon)');
+          return;
+        }
+        _showUpdateToast(event.data.version);
+        _markReload();
+        /* Small delay so user sees the toast before reload */
+        setTimeout(function () { window.location.reload(); }, 1800);
+      });
+
+      /* ── Also handle controller change (older SW path) ─────── */
+      var _refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (_refreshing) return;
+        if (!_canReload()) return;
+        _refreshing = true;
+        _markReload();
+        window.location.reload();
+      });
+
+      /* ── Register SW ─────────────────────────────────────────── */
+      window.addEventListener('load', function () {
+        navigator.serviceWorker
+          .register('/DACUM-Live-Pro-V3.0/sw.js', { scope: '/DACUM-Live-Pro-V3.0/' })
+          .then(function (reg) {
+            console.log('[PWA] SW registered — scope:', reg.scope);
+
+            /* Poll for updates every 60 s (catches deploys while app is open) */
+            setInterval(function () { reg.update(); }, 60000);
+
+            /* Handle SW already waiting (e.g. page was open during a deploy) */
+            if (reg.waiting) {
+              console.log('[PWA] SW already waiting — sending SKIP_WAITING');
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+
+            reg.addEventListener('updatefound', function () {
+              var newWorker = reg.installing;
+              if (!newWorker) return;
+              console.log('[PWA] New SW installing…');
+              newWorker.addEventListener('statechange', function () {
+                console.log('[PWA] SW state:', newWorker.state);
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  /* New SW installed and there's an old one — tell it to skip */
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                }
+              });
+            });
+          })
+          .catch(function (e) { console.warn('[PWA] SW registration failed:', e); });
+      });
+    })();
     </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

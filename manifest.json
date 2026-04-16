@@ -2,26 +2,49 @@
   "name": "DACUM Live Pro",
   "short_name": "DACUM Pro",
   "description": "Professional DACUM Analysis & Competency-Based Curriculum Design Tool",
-  "start_url": "/DACUM-Live-Pro-V3.0/index.html",
+  "start_url": "/DACUM-Live-Pro-V3.0/index.html?pwa=1",
   "scope": "/DACUM-Live-Pro-V3.0/",
   "display": "standalone",
   "orientation": "any",
   "theme_color": "#667eea",
-  "background_color": "#ffffff",
+  "background_color": "#1e1e2e",
   "lang": "en",
   "categories": ["education", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/DACUM-Live-Pro-V3.0/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/DACUM-Live-Pro-V3.0/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/DACUM-Live-Pro-V3.0/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/DACUM-Live-Pro-V3.0/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "New Project",
+      "short_name": "New",
+      "description": "Create a new DACUM project",
+      "url": "/DACUM-Live-Pro-V3.0/index.html?pwa=1",
+      "icons": [{ "src": "/DACUM-Live-Pro-V3.0/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
