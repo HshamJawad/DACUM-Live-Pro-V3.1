@@ -219,13 +219,23 @@
       });
     }
 
-    /* Backdrop click */
-    _backdrop().addEventListener('click', closeSidebar);
+    /* Backdrop click — close unless rename is active */
+    _backdrop().addEventListener('click', function () {
+      var activeInput = document.querySelector('.dps-card-name-input[style*="block"]');
+      if (activeInput) return;
+      closeSidebar();
+    });
 
-    /* Project card click on mobile → close sidebar */
+    /* Project card click on mobile → close sidebar (unless rename is active) */
     document.addEventListener('click', function (e) {
       if (!_isMobile()) return;
-      if (e.target.closest('.dps-card-body')) setTimeout(closeSidebar, 80);
+      if (!e.target.closest('.dps-card-body')) return;
+      /* Do NOT close if a rename input in this card is focused/visible */
+      var card = e.target.closest('.dps-card');
+      if (card && card.classList.contains('dps-editing')) return;
+      var activeInput = document.querySelector('.dps-card-name-input[style*="block"]');
+      if (activeInput) return;
+      setTimeout(closeSidebar, 80);
     });
 
     /* Nav item click on mobile → close sidebar after tab switches */
@@ -234,9 +244,13 @@
       if (e.target.closest('.dps-nav-item[data-target-tab]')) setTimeout(closeSidebar, 120);
     });
 
-    /* Escape */
+    /* Escape — close sidebar unless rename input is active */
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeSidebar();
+      if (e.key === 'Escape') {
+        var activeInput = document.querySelector('.dps-card-name-input[style*="block"]');
+        if (activeInput) return;   /* let rename handle its own Escape */
+        closeSidebar();
+      }
     });
 
     /* Touch swipe */

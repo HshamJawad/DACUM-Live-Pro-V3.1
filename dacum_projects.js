@@ -369,7 +369,6 @@ export function initProjectsSidebar() {
     <!-- ── TOP: Brand + collapse button ── -->
     <div class="dps-top">
       <div class="dps-brand">
-        <span class="dps-brand-icon">📊</span>
         <span class="dps-brand-text">DACUM Live Pro</span>
       </div>
       <button class="dps-collapse-btn" id="dpsCollapseBtn" title="Toggle sidebar" aria-label="Toggle sidebar">
@@ -844,11 +843,14 @@ function _startInlineRename(id) {
   nameSpan.style.display  = 'none';
   nameInput.style.display = 'block';
 
-  // CRITICAL: stop click/mousedown bubbling so card-body "load-project"
+  // CRITICAL: stop click/mousedown/touchstart bubbling so card-body "load-project"
   // handler doesn't fire when user clicks inside the input field.
+  // Also stops touch events from reaching the mobile backdrop close handler.
   function _stopBubble(e) { e.stopPropagation(); }
-  nameInput.addEventListener('click',     _stopBubble);
-  nameInput.addEventListener('mousedown', _stopBubble);
+  nameInput.addEventListener('click',      _stopBubble);
+  nameInput.addEventListener('mousedown',  _stopBubble);
+  nameInput.addEventListener('touchstart', _stopBubble, { passive: true });
+  nameInput.addEventListener('touchend',   _stopBubble, { passive: true });
 
   // Delay focus to next tick so the rename-button's own click event
   // finishes before we attach the blur listener.
@@ -886,10 +888,12 @@ function _startInlineRename(id) {
   }
 
   function cleanup() {
-    nameInput.removeEventListener('blur',      commit);
-    nameInput.removeEventListener('keydown',   onKey);
-    nameInput.removeEventListener('click',     _stopBubble);
-    nameInput.removeEventListener('mousedown', _stopBubble);
+    nameInput.removeEventListener('blur',        commit);
+    nameInput.removeEventListener('keydown',     onKey);
+    nameInput.removeEventListener('click',       _stopBubble);
+    nameInput.removeEventListener('mousedown',   _stopBubble);
+    nameInput.removeEventListener('touchstart',  _stopBubble);
+    nameInput.removeEventListener('touchend',    _stopBubble);
   }
 
   function onKey(e) {
@@ -1021,37 +1025,32 @@ function _injectCSS() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 13px 10px 13px 14px;
+  padding: 0 10px 0 16px;     /* no top/bottom padding — height from min-height */
   border-bottom: 1px solid #313244;
   flex-shrink: 0;
   min-height: 56px;
-  gap: 8px;
-  overflow: hidden;       /* prevent any child from escaping the row */
+  gap: 10px;                   /* guaranteed gap between brand and button */
+  overflow: hidden;
 }
 .dps-brand {
   display: flex;
   align-items: center;
-  gap: 9px;
-  flex: 1;               /* fill all space left of the button */
-  min-width: 0;          /* allow text to shrink below intrinsic width */
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
 }
-.dps-brand-icon {
-  font-size: 1.25em;
-  flex-shrink: 0;
-  line-height: 1;
-}
+.dps-brand-icon { display: none; }  /* removed per Issue 1 */
 .dps-brand-text {
-  font-size: 1.1rem;
+  font-size: 1rem;             /* slightly smaller so it comfortably fits */
   font-weight: 800;
   color: #cba6f7;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;  /* graceful fallback if ever needed */
+  text-overflow: ellipsis;
   letter-spacing: -0.01em;
   opacity: 1;
   transition: opacity 0.18s;
-  /* max-width removed — flex:1 on parent handles containment correctly */
+  /* no max-width — flex:1 on parent is the correct constraint */
 }
 .dps-sidebar.dps-collapsed .dps-brand-text {
   opacity: 0;
@@ -1060,7 +1059,7 @@ function _injectCSS() {
   overflow: hidden;
 }
 
-/* Collapse / expand button — always visible */
+/* Collapse / expand button — always visible, never overlaps title */
 .dps-collapse-btn {
   background: rgba(203,166,247,0.08);
   border: 1.5px solid #6c7086;
@@ -1075,14 +1074,13 @@ function _injectCSS() {
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  line-height: 0;         /* prevent line-height from adding phantom space */
+  line-height: 0;
   overflow: visible;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .dps-collapse-btn svg {
   display: block;
   flex-shrink: 0;
-  color: inherit;         /* inherit from button's color property */
   stroke: currentColor;
 }
 .dps-collapse-btn:hover {
@@ -1092,7 +1090,7 @@ function _injectCSS() {
 }
 .dps-sidebar.dps-collapsed .dps-top {
   justify-content: center;
-  padding: 13px 6px;
+  padding: 0 6px;
 }
 .dps-sidebar.dps-collapsed .dps-brand {
   display: none;
