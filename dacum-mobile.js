@@ -21,26 +21,42 @@
     var s = document.createElement('style');
     s.id = 'dps-mobile-styles';
     s.textContent =
-      /* Show toolbar toggle button on mobile only */
+      /* ── Toolbar hamburger: hidden on desktop, shown on mobile ── */
+      '#btnSidebarToggle { display: none; }' +
       '@media (max-width:1100px){' +
         '#btnSidebarToggle{' +
           'display:inline-flex!important;' +
-          'align-items:center;justify-content:center;' +
-          'background:transparent;' +
-          'border:1.5px solid rgba(255,255,255,0.18);' +
-          'border-radius:8px;' +
-          'padding:7px 9px;cursor:pointer;color:#e2e8f0;' +
-          'transition:background 0.15s;' +
+          'align-items:center!important;' +
+          'justify-content:center!important;' +
+          'background:rgba(255,255,255,0.06)!important;' +
+          'border:1.5px solid rgba(255,255,255,0.2)!important;' +
+          'border-radius:8px!important;' +
+          'padding:7px 9px!important;' +
+          'cursor:pointer!important;' +
+          'color:#e2e8f0!important;' +
+          'transition:background 0.15s!important;' +
+          'flex-shrink:0!important;' +
         '}' +
-        '#btnSidebarToggle:hover{background:rgba(255,255,255,0.1);}' +
+        '#btnSidebarToggle:hover{background:rgba(255,255,255,0.14)!important;}' +
+        '#btnSidebarToggle svg{display:block!important;flex-shrink:0;}' +
       '}' +
-      /* Scroll fix: projects list must always be scrollable */
-      '.dps-projects-section{overflow:hidden!important;flex:1;min-height:0;display:flex;flex-direction:column;}' +
-      '.dps-list{flex:1;min-height:0;overflow-y:auto!important;overflow-x:hidden;}' +
-      /* Smooth transitions */
-      '.dps-sidebar{transition:width 0.25s cubic-bezier(.4,0,.2,1)!important;}' +
+
+      /* ── Sidebar scroll: one unit, all content scrolls together ── *
+       * .dps-projects-section must NOT have overflow:hidden or flex:1 *
+       * (fixed in dacum_projects.js _injectCSS).                     *
+       * This rule only ensures the sidebar itself is scrollable.      */
+      '.dps-sidebar{overflow-y:auto!important;overflow-x:hidden!important;}' +
+      '.dps-sidebar.dps-collapsed{overflow:visible!important;}' +
+
+      /* ── Smooth transitions per context ── */
+      '@media (min-width:1101px){' +
+        '.dps-sidebar{transition:width 0.25s cubic-bezier(.4,0,.2,1)!important;}' +
+      '}' +
       '@media (max-width:1100px){' +
-        '.dps-sidebar{transition:transform 0.28s cubic-bezier(.4,0,.2,1)!important;}' +
+        '.dps-sidebar{' +
+          'transition:transform 0.28s cubic-bezier(.4,0,.2,1)!important;' +
+          'overflow-y:auto!important;' /* keep scrollable in overlay too */ +
+        '}' +
       '}';
     document.head.appendChild(s);
   }
@@ -48,12 +64,13 @@
   /* ── Set hamburger icon on toolbar toggle button ────────── */
   function _setToggleIcon() {
     var btn = document.getElementById('btnSidebarToggle');
-    if (!btn || btn.querySelector('svg')) return;
+    if (!btn) return;
+    /* Always set icon — idempotent, harmless on re-call */
     btn.innerHTML =
-      '<svg viewBox="0 0 18 18" width="16" height="16" fill="none" aria-hidden="true">' +
-        '<rect x="2" y="3.5"  width="14" height="1.8" rx="0.9" fill="currentColor"/>' +
-        '<rect x="2" y="8.1"  width="14" height="1.8" rx="0.9" fill="currentColor"/>' +
-        '<rect x="2" y="12.7" width="14" height="1.8" rx="0.9" fill="currentColor"/>' +
+      '<svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true">' +
+        '<rect x="2" y="4"   width="16" height="2" rx="1" fill="currentColor"/>' +
+        '<rect x="2" y="9"   width="16" height="2" rx="1" fill="currentColor"/>' +
+        '<rect x="2" y="14"  width="16" height="2" rx="1" fill="currentColor"/>' +
       '</svg>';
   }
 

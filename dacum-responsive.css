@@ -86,6 +86,8 @@ body {
     transition: transform 0.28s cubic-bezier(.4,0,.2,1) !important;
     z-index: 500 !important;
     box-shadow: none !important;
+    overflow-y: auto !important;   /* sidebar scrolls as one unit on mobile too */
+    overflow-x: hidden !important;
   }
   .dps-sidebar.dps-mobile-open {
     transform: translateX(0) !important;
@@ -332,12 +334,13 @@ body {
               transform 0.28s cubic-bezier(.4,0,.2,1) !important;
 }
 
-/* dps-force-hidden: completely hide sidebar (width→0, for overlay mode) */
+/* dps-force-hidden: width→0 for legacy compatibility only.
+   overflow kept hidden since the sidebar has no width anyway. */
 .dps-sidebar.dps-force-hidden {
   width: 0 !important;
-  overflow: hidden !important;
-  box-shadow: none !important;
   min-width: 0 !important;
+  box-shadow: none !important;
+  overflow: hidden !important;   /* OK at width:0, no content visible */
 }
 #dacumAppWrapper.dps-force-hidden-wrapper > .container {
   margin-left: 0 !important;

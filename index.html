@@ -34,8 +34,9 @@
     <link rel="stylesheet" href="dacum-typography.css">
     <link rel="stylesheet" href="tv-refactor.css">
     <style>
-      /* ── Top-toolbar sidebar toggle: hidden (collapse btn is now inside sidebar) ── */
-      #btnSidebarToggle { display: none !important; }
+      /* ── Top-toolbar sidebar toggle: hidden on desktop,
+            shown on mobile via dacum-mobile.js injected CSS  ── */
+      #btnSidebarToggle { display: none; }
 
       /* ── Fully-hidden sidebar state (force-hide keeps 0px, not 68px) ── */
       #dacumProjectsSidebar.dps-force-hidden {

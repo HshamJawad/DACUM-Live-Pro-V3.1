@@ -920,10 +920,9 @@ function _toggleSidebar() {
 function _updateCollapseIcon(collapsed) {
   const btn = document.getElementById('dpsCollapseBtn');
   if (!btn) return;
-  // Right-pointing chevron when collapsed, left-pointing when expanded
   btn.innerHTML = collapsed
-    ? `<svg viewBox="0 0 18 18" width="14" height="14" fill="none" aria-hidden="true"><path d="M7 4l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-    : `<svg viewBox="0 0 18 18" width="14" height="14" fill="none" aria-hidden="true"><path d="M11 4L7 9l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    ? `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true"><path d="M8 5l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    : `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true"><path d="M12 5l-5 5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 function _positionToggle() {
@@ -999,11 +998,14 @@ function _injectCSS() {
   transition: width 0.25s cubic-bezier(.4,0,.2,1);
   z-index: 300;
   box-shadow: 2px 0 16px rgba(0,0,0,0.3);
+  /* Single-unit scrollbar (ChatGPT style) */
   scrollbar-width: thin;
-  scrollbar-color: #45475a transparent;
+  scrollbar-color: #6c7086 transparent;
 }
-.dps-sidebar::-webkit-scrollbar { width: 4px; }
-.dps-sidebar::-webkit-scrollbar-thumb { background: #45475a; border-radius: 4px; }
+.dps-sidebar::-webkit-scrollbar       { width: 5px; }
+.dps-sidebar::-webkit-scrollbar-track { background: transparent; }
+.dps-sidebar::-webkit-scrollbar-thumb { background: #6c7086; border-radius: 5px; }
+.dps-sidebar::-webkit-scrollbar-thumb:hover { background: #a6adc8; }
 
 /* Collapsed state: slim 68px icon rail */
 .dps-sidebar.dps-collapsed {
@@ -1055,13 +1057,13 @@ function _injectCSS() {
 
 /* Collapse / expand button — always visible */
 .dps-collapse-btn {
-  background: transparent;
-  border: 1.5px solid #45475a;
+  background: rgba(203,166,247,0.08);
+  border: 1.5px solid #6c7086;
   border-radius: 8px;
-  color: #a6adc8;
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
+  color: #cdd6f4;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1070,7 +1072,7 @@ function _injectCSS() {
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .dps-collapse-btn:hover {
-  background: #313244;
+  background: rgba(203,166,247,0.22);
   border-color: #cba6f7;
   color: #cba6f7;
 }
@@ -1213,9 +1215,7 @@ function _injectCSS() {
 .dps-projects-section {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  flex-shrink: 0;   /* don't compress — let sidebar scroll as one unit */
 }
 
 /* Projects label row */
@@ -1302,11 +1302,8 @@ function _injectCSS() {
 
 /* ── Project list ── */
 .dps-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 6px 8px 16px;
-  scrollbar-width: thin;
-  scrollbar-color: #45475a transparent;
+  padding: 6px 8px 48px;  /* generous bottom so last card clears viewport */
+  min-height: 60px;
 }
 .dps-sidebar.dps-collapsed .dps-list { display: none; }
 .dps-empty {
