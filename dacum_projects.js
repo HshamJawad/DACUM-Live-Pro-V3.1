@@ -373,8 +373,8 @@ export function initProjectsSidebar() {
         <span class="dps-brand-text">DACUM Live Pro</span>
       </div>
       <button class="dps-collapse-btn" id="dpsCollapseBtn" title="Toggle sidebar" aria-label="Toggle sidebar">
-        <svg viewBox="0 0 18 18" width="14" height="14" fill="none" aria-hidden="true">
-          <path d="M11 4L7 9l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true" style="display:block;stroke:currentColor;">
+          <path d="M12 5l-5 5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
     </div>
@@ -920,9 +920,10 @@ function _toggleSidebar() {
 function _updateCollapseIcon(collapsed) {
   const btn = document.getElementById('dpsCollapseBtn');
   if (!btn) return;
+  const svgStyle = 'display:block;stroke:currentColor;';
   btn.innerHTML = collapsed
-    ? `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true"><path d="M8 5l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-    : `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true"><path d="M12 5l-5 5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    ? `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true" style="${svgStyle}"><path d="M8 5l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    : `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true" style="${svgStyle}"><path d="M12 5l-5 5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 function _positionToggle() {
@@ -1024,13 +1025,15 @@ function _injectCSS() {
   border-bottom: 1px solid #313244;
   flex-shrink: 0;
   min-height: 56px;
-  gap: 6px;
+  gap: 8px;
+  overflow: hidden;       /* prevent any child from escaping the row */
 }
 .dps-brand {
   display: flex;
   align-items: center;
   gap: 9px;
-  min-width: 0;
+  flex: 1;               /* fill all space left of the button */
+  min-width: 0;          /* allow text to shrink below intrinsic width */
   overflow: hidden;
 }
 .dps-brand-icon {
@@ -1039,20 +1042,22 @@ function _injectCSS() {
   line-height: 1;
 }
 .dps-brand-text {
-  font-size: 1.1rem;  /* ~18px per spec */
+  font-size: 1.1rem;
   font-weight: 800;
   color: #cba6f7;
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;  /* graceful fallback if ever needed */
   letter-spacing: -0.01em;
   opacity: 1;
-  transition: opacity 0.18s, max-width 0.25s;
-  max-width: 160px;
+  transition: opacity 0.18s;
+  /* max-width removed — flex:1 on parent handles containment correctly */
 }
 .dps-sidebar.dps-collapsed .dps-brand-text {
   opacity: 0;
-  max-width: 0;
+  width: 0;
   pointer-events: none;
+  overflow: hidden;
 }
 
 /* Collapse / expand button — always visible */
@@ -1064,12 +1069,21 @@ function _injectCSS() {
   width: 32px;
   height: 32px;
   min-width: 32px;
+  max-width: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
+  line-height: 0;         /* prevent line-height from adding phantom space */
+  overflow: visible;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.dps-collapse-btn svg {
+  display: block;
+  flex-shrink: 0;
+  color: inherit;         /* inherit from button's color property */
+  stroke: currentColor;
 }
 .dps-collapse-btn:hover {
   background: rgba(203,166,247,0.22);
