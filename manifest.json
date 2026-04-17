@@ -2,7 +2,7 @@
   "name": "DACUM Live Pro",
   "short_name": "DACUM Pro",
   "description": "Professional DACUM Analysis & Competency-Based Curriculum Design Tool",
-  "start_url": "/DACUM-Live-Pro-V3.0/index.html?pwa=1",
+  "start_url": "/DACUM-Live-Pro-V3.0/index.html",
   "scope": "/DACUM-Live-Pro-V3.0/",
   "display": "standalone",
   "orientation": "any",
@@ -37,13 +37,12 @@
       "purpose": "maskable"
     }
   ],
-  "screenshots": [],
   "shortcuts": [
     {
-      "name": "New Project",
-      "short_name": "New",
-      "description": "Create a new DACUM project",
-      "url": "/DACUM-Live-Pro-V3.0/index.html?pwa=1",
+      "name": "Open DACUM Live Pro",
+      "short_name": "Open",
+      "description": "Open DACUM Live Pro",
+      "url": "/DACUM-Live-Pro-V3.0/index.html",
       "icons": [{ "src": "/DACUM-Live-Pro-V3.0/icon-192.png", "sizes": "192x192" }]
     }
   ]

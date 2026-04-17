@@ -19,109 +19,110 @@
     (function () {
       if (!('serviceWorker' in navigator)) return;
 
-      /* ── Prevent infinite reload loops ─────────────────────── */
-      var _reloadKey   = 'dacum_sw_reload_ts';
-      var _minInterval = 15000; // ms — never reload more than once per 15s
+      // ── Reload guard: keyed by SW version so each new deploy
+      //    always triggers exactly one reload, never loops.
+      var _reloadKeyPrefix = 'dacum_sw_reloaded_';
+      var _minInterval     = 20000; // ms safety gap
 
-      function _canReload() {
+      function _canReload(version) {
         try {
-          var last = parseInt(sessionStorage.getItem(_reloadKey) || '0', 10);
+          var key  = _reloadKeyPrefix + version;
+          var last = parseInt(sessionStorage.getItem(key) || '0', 10);
           return (Date.now() - last) > _minInterval;
         } catch (e) { return true; }
       }
-      function _markReload() {
-        try { sessionStorage.setItem(_reloadKey, String(Date.now())); } catch (e) {}
+      function _markReload(version) {
+        try { sessionStorage.setItem(_reloadKeyPrefix + version, String(Date.now())); } catch (e) {}
       }
 
-      /* ── Update toast UI ────────────────────────────────────── */
+      // ── Update toast ─────────────────────────────────────────
       function _showUpdateToast(version) {
         if (document.getElementById('dacumUpdateToast')) return;
-        var toast = document.createElement('div');
-        toast.id = 'dacumUpdateToast';
-        toast.style.cssText =
-          'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
-          'background:linear-gradient(135deg,#667eea,#764ba2);' +
-          'color:#fff;padding:12px 22px;border-radius:12px;' +
-          'font-size:0.88em;font-weight:600;font-family:inherit;' +
-          'box-shadow:0 6px 24px rgba(102,126,234,0.45);' +
-          'z-index:999999;display:flex;align-items:center;gap:10px;' +
-          'animation:dacumToastIn 0.3s cubic-bezier(.16,1,.3,1);' +
-          'max-width:90vw;text-align:center;';
-        toast.innerHTML =
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"' +
-          ' stroke="currentColor" stroke-width="2.5" stroke-linecap="round"' +
-          ' stroke-linejoin="round" style="flex-shrink:0">' +
+        var s = document.createElement('style');
+        s.textContent =
+          '@keyframes _dpwain{from{opacity:0;transform:translateX(-50%) translateY(20px)}' +
+          'to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+        document.head.appendChild(s);
+
+        var t = document.createElement('div');
+        t.id = 'dacumUpdateToast';
+        t.style.cssText =
+          'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);' +
+          'background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;' +
+          'padding:11px 20px;border-radius:12px;font-size:0.85em;font-weight:600;' +
+          'font-family:inherit;box-shadow:0 6px 24px rgba(102,126,234,0.5);' +
+          'z-index:2147483647;display:flex;align-items:center;gap:9px;' +
+          'white-space:nowrap;animation:_dpwain 0.35s cubic-bezier(.16,1,.3,1);';
+        t.innerHTML =
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+          ' stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
           '<polyline points="23 4 23 10 17 10"/>' +
           '<path d="M20.49 15a9 9 0 1 1-.07-8.4"/></svg>' +
-          '<span>New version available — updating…</span>';
-
-        if (!document.getElementById('dacumToastKeyframes')) {
-          var ks = document.createElement('style');
-          ks.id = 'dacumToastKeyframes';
-          ks.textContent =
-            '@keyframes dacumToastIn{from{opacity:0;transform:translateX(-50%) translateY(16px)}' +
-            'to{opacity:1;transform:translateX(-50%) translateY(0)}}';
-          document.head.appendChild(ks);
-        }
-
-        document.body.appendChild(toast);
-        console.log('[PWA] Update toast shown — version', version);
+          '<span>Updating to latest version…</span>';
+        document.body.appendChild(t);
+        console.log('[PWA] Update toast — v' + version);
       }
 
-      /* ── Handle message from SW ─────────────────────────────── */
-      navigator.serviceWorker.addEventListener('message', function (event) {
-        if (!event.data || event.data.type !== 'SW_UPDATED') return;
-        console.log('[PWA] SW_UPDATED received, version:', event.data.version);
-        if (!_canReload()) {
-          console.log('[PWA] Reload suppressed (too soon)');
+      // ── Perform reload (safe, one-shot) ──────────────────────
+      function _doReload(version) {
+        if (!_canReload(version)) {
+          console.log('[PWA] Reload suppressed for v' + version + ' (already reloaded recently)');
           return;
         }
-        _showUpdateToast(event.data.version);
-        _markReload();
-        /* Small delay so user sees the toast before reload */
-        setTimeout(function () { window.location.reload(); }, 1800);
+        _markReload(version);
+        _showUpdateToast(version);
+        setTimeout(function () { window.location.reload(); }, 1600);
+      }
+
+      // ── Listen for SW_UPDATED message from sw.js ─────────────
+      navigator.serviceWorker.addEventListener('message', function (e) {
+        if (!e.data || e.data.type !== 'SW_UPDATED') return;
+        console.log('[PWA] SW_UPDATED received — version:', e.data.version);
+        _doReload(e.data.version);
       });
 
-      /* ── Also handle controller change (older SW path) ─────── */
-      var _refreshing = false;
+      // ── Fallback: controllerchange (older browser path) ──────
+      var _reloading = false;
       navigator.serviceWorker.addEventListener('controllerchange', function () {
-        if (_refreshing) return;
-        if (!_canReload()) return;
-        _refreshing = true;
-        _markReload();
-        window.location.reload();
+        if (_reloading) return;
+        _reloading = true;
+        // Use a generic version key for the controllerchange path
+        _doReload('ctrl');
       });
 
-      /* ── Register SW ─────────────────────────────────────────── */
+      // ── Register SW ──────────────────────────────────────────
       window.addEventListener('load', function () {
         navigator.serviceWorker
           .register('/DACUM-Live-Pro-V3.0/sw.js', { scope: '/DACUM-Live-Pro-V3.0/' })
           .then(function (reg) {
             console.log('[PWA] SW registered — scope:', reg.scope);
 
-            /* Poll for updates every 60 s (catches deploys while app is open) */
+            // Check for updates every 60 s while the app is open
             setInterval(function () { reg.update(); }, 60000);
 
-            /* Handle SW already waiting (e.g. page was open during a deploy) */
+            // If a new SW is already waiting (e.g. page was open during deploy)
             if (reg.waiting) {
               console.log('[PWA] SW already waiting — sending SKIP_WAITING');
               reg.waiting.postMessage({ type: 'SKIP_WAITING' });
             }
 
+            // Watch for new SW installations
             reg.addEventListener('updatefound', function () {
               var newWorker = reg.installing;
               if (!newWorker) return;
-              console.log('[PWA] New SW installing…');
+              console.log('[PWA] New SW found — state:', newWorker.state);
               newWorker.addEventListener('statechange', function () {
-                console.log('[PWA] SW state:', newWorker.state);
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  /* New SW installed and there's an old one — tell it to skip */
+                console.log('[PWA] SW statechange:', newWorker.state);
+                // When installed: nudge it to skip waiting immediately
+                if (newWorker.state === 'installed') {
                   newWorker.postMessage({ type: 'SKIP_WAITING' });
                 }
               });
             });
           })
-          .catch(function (e) { console.warn('[PWA] SW registration failed:', e); });
+          .catch(function (err) {
+            console.warn('[PWA] SW registration failed:', err);
+          });
       });
     })();
     </script>
