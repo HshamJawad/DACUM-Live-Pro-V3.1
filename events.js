@@ -49,6 +49,8 @@ import { lwFinalizeAndCreateSession, lwCopyLink, lwShowQRCode,
   lwCloseQRModal, lwDownloadQRPNG, lwFetchResults,
   lwExportJSON, lwExportCSV, lwExportSnapshot,
   lwCloseVoting, lwExportVerifiedPDF, lwExportVerifiedDOCX }  from './workshop.js';
+import { markAiGenerated, refineResults,
+         clearAiGeneratedFlag }                               from './refine.js';
 
 // ── Delegation helper ─────────────────────────────────────────
 
@@ -80,6 +82,9 @@ export function setupEvents() {
 
     // Reset undo/redo stack to the empty state
     resetHistoryToCurrentState();
+
+    // Hide the Refine Results card — there is nothing AI-generated to refine
+    clearAiGeneratedFlag();
   });
 
   // Undo / Redo buttons
@@ -122,13 +127,17 @@ export function setupEvents() {
   });
   _on('aiGenerateBtn', 'click', () => {
     generateAIDacum()
-      .then(() => {
+      .then((ok) => {
         resetHistoryToCurrentState();
         saveCurrentProject();
         renderProjectsSidebar();
+        // Reveal the Refine Results card only if generation actually ran
+        if (ok) markAiGenerated();
       })
       .catch(() => {});
   });
+  // Refine Results — runs soft cleanup on AI-generated duties/tasks
+  _on('btnRefineResults', 'click', () => refineResults());
   _on('btnExportPDF',          'click', () => exportToPDF());
   _on('btnExportWord',         'click', () => exportToWord());
 

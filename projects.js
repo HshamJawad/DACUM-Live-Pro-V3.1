@@ -465,12 +465,14 @@ Generate the DACUM draft now in valid JSON format only.`;
     hideLoadingModal();
     incrementUsage();
     showStatus(`✓ AI draft generated successfully! ${dacumData.duties.length} duties with tasks created.`, 'success');
+    return true;
 
   } catch (error) {
     hideLoadingModal();
     console.error('Error generating AI DACUM:', error);
     showStatus('AI generation failed. See the error dialog for details.', 'error');
     _showAIErrorModal(error.message || String(error));
+    return false;
   }
 }
 
