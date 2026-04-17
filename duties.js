@@ -94,12 +94,12 @@ function _renderTableView(container) {
     container.appendChild(dutyDiv);
 
     const taskList = document.getElementById(`tasks_${duty.id}`);
-    duty.tasks.forEach(task => {
+    duty.tasks.forEach((task, index) => {
       const taskDiv = document.createElement('div');
       taskDiv.className = 'task-item';
       taskDiv.id = task.divId;
       taskDiv.innerHTML = `
-        <span class="task-label">Task ${task.num}:</span>
+        <span class="task-label">Task ${index + 1}:</span>
         <input type="text" style="flex:1;" placeholder="Enter task description"
                data-task-id="${task.inputId}" value="${_esc(task.text)}">
         <button class="btn-remove" data-action="remove-task" data-task-div-id="${task.divId}">🗑️</button>
@@ -149,8 +149,8 @@ function _renderCardView(container) {
     tasksScroll.className = 'dcv-tasks-scroll';
     tasksScroll.id = `tasks_${duty.id}`;
 
-    duty.tasks.forEach(task => {
-      tasksScroll.appendChild(_makeTaskCard(task));
+    duty.tasks.forEach((task, index) => {
+      tasksScroll.appendChild(_makeTaskCard(task, index + 1));
     });
 
     // ── Add Task button lives INSIDE the scroll strip ──
@@ -169,14 +169,14 @@ function _renderCardView(container) {
   });
 }
 
-function _makeTaskCard(task) {
+function _makeTaskCard(task, displayNum) {
   const card = document.createElement('div');
   card.className = 'dcv-task-card';
   card.id = task.divId;
   card.innerHTML = `
     <button class="dcv-close-btn" data-action="remove-task" data-task-div-id="${task.divId}"
             title="Remove task">✕</button>
-    <span class="dcv-task-label">Task ${task.num}</span>
+    <span class="dcv-task-label">Task ${displayNum}</span>
     <textarea class="dcv-task-input"
               data-task-id="${task.inputId}"
               placeholder="Enter task"

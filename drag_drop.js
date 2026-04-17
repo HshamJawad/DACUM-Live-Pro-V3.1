@@ -102,6 +102,11 @@ function _onDragEnd(evt) {
   // No-op guard: same container, same index
   if (fromDutyId === toDutyId && evt.oldIndex === evt.newIndex) return;
 
+  // Capture the moved task's divId BEFORE rerender detaches evt.item,
+  // so we can re-find the NEW DOM node after renderDutiesFromState()
+  // and apply the temporary highlight class.
+  const movedDivId = evt.item?.id || null;
+
   // 1 · Capture any in-flight textarea edits into state BEFORE mutation
   syncAllFromDOM();
 
@@ -136,4 +141,16 @@ function _onDragEnd(evt) {
   // 5 · Persist + normalise DOM via the canonical render pipeline
   try { saveCurrentProject(); } catch (_) { /* autosave will catch up */ }
   renderDutiesFromState();
+
+  // 6 · Flash a temporary highlight on the moved card (no animation)
+  if (movedDivId) {
+    const freshEl = document.getElementById(movedDivId);
+    if (freshEl) {
+      freshEl.classList.add('task-moved-highlight');
+      setTimeout(() => {
+        const stillThere = document.getElementById(movedDivId);
+        if (stillThere) stillThere.classList.remove('task-moved-highlight');
+      }, 1500);
+    }
+  }
 }
