@@ -182,6 +182,38 @@
     </style>
 </head>
 <body>
+    <!-- ══ STALE CACHE GUARD ════════════════════════════════════
+         This inline script runs synchronously before any content
+         renders. It detects when the old cached HTML is served by
+         an outdated SW and forces a hard reload to get fresh HTML.
+         Key signals of OLD index.html:
+           • has <h1> with DACUM branding (removed in new version)
+           • .tabs div has no id (new version adds id="dacumMainTabsHidden")
+         This script is safe to run on new HTML — it finds neither
+         signal and exits immediately.
+    ═══════════════════════════════════════════════════════════ -->
+    <script>
+    (function () {
+      // Only heal once per session to prevent reload loops
+      var _KEY = '_dacum_fresh_v8';
+      if (sessionStorage.getItem(_KEY)) return;
+
+      // Signal 1: old HTML had <h1> with visible DACUM branding
+      var hasOldH1 = !!document.querySelector('h1');
+
+      // Signal 2: old HTML had .tabs without id="dacumMainTabsHidden"
+      var tabsEl = document.querySelector('.tabs');
+      var hasOldTabs = tabsEl && tabsEl.id !== 'dacumMainTabsHidden';
+
+      if (hasOldH1 || hasOldTabs) {
+        console.warn('[DACUM] Stale HTML detected — forcing hard reload');
+        sessionStorage.setItem(_KEY, '1');
+        // Hard reload bypasses SW cache for HTML
+        window.location.reload(true);
+      }
+    })();
+    </script>
+
     <div class="container">
         
         <!-- Tabs kept in DOM (hidden) so tab-switching logic works unchanged.

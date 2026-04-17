@@ -80,12 +80,13 @@ self.addEventListener('install', function (event) {
   );
 });
 
-// ── Activate: claim clients, purge old caches, notify to reload
+// ── Activate: claim clients, purge old caches, warm cache, notify to reload
 self.addEventListener('activate', function (event) {
   console.log('[SW ' + CACHE_VERSION + '] Activating...');
   event.waitUntil(
     self.clients.claim()
       .then(function () {
+        // Delete ALL old version caches
         return caches.keys().then(function (keys) {
           return Promise.all(
             keys.filter(function (k) { return k !== CACHE_NAME; })
@@ -97,7 +98,37 @@ self.addEventListener('activate', function (event) {
         });
       })
       .then(function () {
-        console.log('[SW ' + CACHE_VERSION + '] Notifying all clients');
+        // Pre-fetch the critical files fresh from network RIGHT NOW,
+        // before notifying clients to reload. This ensures that when
+        // old-HTML pages reload, they immediately get the new HTML/JS/CSS
+        // instead of waiting for the next fetch cycle.
+        var criticalUrls = [
+          BASE + 'index.html',
+          BASE + 'dacum_projects.js',
+          BASE + 'dacum-mobile.js',
+          BASE + 'dacum-styles.css',
+          BASE + 'dacum-responsive.css',
+          BASE + 'app.js',
+        ];
+        return caches.open(CACHE_NAME).then(function (cache) {
+          return Promise.allSettled(
+            criticalUrls.map(function (url) {
+              return fetch(url, { cache: 'no-store' }).then(function (res) {
+                if (res && res.status === 200) {
+                  cache.put(url, res.clone());
+                  console.log('[SW] Warmed cache:', url);
+                }
+                return res;
+              }).catch(function (err) {
+                console.warn('[SW] Warm failed:', url, err.message);
+              });
+            })
+          );
+        });
+      })
+      .then(function () {
+        // NOW notify all clients to reload — fresh files are ready
+        console.log('[SW ' + CACHE_VERSION + '] Cache warm complete — notifying clients');
         return self.clients.matchAll({
           type: 'window',
           includeUncontrolled: true

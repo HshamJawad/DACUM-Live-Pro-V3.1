@@ -113,10 +113,30 @@
     console.log('[PWA] App installed.');
   });
 
+  /* ── SW Version Guardian ───────────────────────────────── */
+  // Immediately trigger a SW update check on every page load.
+  // This catches cases where the old SW is serving stale files.
+  function _forceSWUpdate() {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.getRegistration().then(function (reg) {
+      if (reg) {
+        reg.update().then(function () {
+          console.log('[DACUM] SW update check complete');
+          // If a SW is already waiting, activate it immediately
+          if (reg.waiting) {
+            console.log('[DACUM] SW waiting found — activating');
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }).catch(function () {});
+      }
+    }).catch(function () {});
+  }
+
   /* ── Bootstrap ─────────────────────────────────────────── */
   function _init() {
     _hideOldBadge();
-    _injectInstallCSS();   /* inject CSS early so button is always styled */
+    _injectInstallCSS();
+    _forceSWUpdate();
     /* Sidebar/hamburger handled entirely by dacum-mobile.js */
   }
 
