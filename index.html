@@ -69,8 +69,15 @@
       // SW sends SW_UPDATED after activate
       navigator.serviceWorker.addEventListener('message', function (e) {
         if (!e.data) return;
-        if (e.data.type === 'SW_UPDATED') { console.log('[PWA] SW_UPDATED', e.data.version); _reload(e.data.version); }
-        // Version query response
+
+        // ── TASK 1: SW_UPDATED — force reload immediately ────────
+        if (e.data.type === 'SW_UPDATED') {
+          console.log('[APP] New version detected:', e.data.version);
+          // Use existing guarded reload (shows toast, prevents loops)
+          _reload(e.data.version);
+        }
+
+        // Version query response — if controller is stale, force update
         if (e.data.type === 'VERSION_REPLY' && e.data.version !== EXPECTED_SW) {
           console.log('[PWA] Stale SW detected (' + e.data.version + '), triggering update');
           if (navigator.serviceWorker.controller) {
@@ -93,6 +100,19 @@
           { scope: '/DACUM-Live-Pro-V3.0/', updateViaCache: 'none' }
         ).then(function (reg) {
           console.log('[PWA] Registered', reg.scope);
+
+          // ── TASK 3: Debug log ────────────────────────────────
+          console.log('[APP] SW controller:', navigator.serviceWorker.controller);
+
+          // ── TASK 2: Ensure page is controlled by SW ──────────
+          // If not yet controlled (first install or SW was cleared),
+          // reload once so the SW can intercept all requests.
+          navigator.serviceWorker.ready.then(function () {
+            if (!navigator.serviceWorker.controller) {
+              console.log('[APP] Not controlled by SW — reloading...');
+              window.location.reload();
+            }
+          });
 
           // Immediate update check + every 30 s
           reg.update();
