@@ -17,9 +17,11 @@
 
   /* ── Inject supplemental CSS ────────────────────────────── */
   function _injectMobileCSS() {
-    if (document.getElementById('dps-mobile-styles')) return;
+    if (document.getElementById('dps-mobile-styles-v8')) return;
+    var _old = document.getElementById('dps-mobile-styles');
+    if (_old) _old.remove();
     var s = document.createElement('style');
-    s.id = 'dps-mobile-styles';
+    s.id = 'dps-mobile-styles-v8';
     s.textContent =
       /* ── Toolbar hamburger: hidden on desktop, shown on mobile ── */
       '#btnSidebarToggle { display: none; }' +

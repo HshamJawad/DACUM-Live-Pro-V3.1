@@ -958,9 +958,12 @@ function _esc(str) {
 // ── CSS injection ─────────────────────────────────────────────
 
 function _injectCSS() {
-  if (document.getElementById('dps-styles')) return;
+  if (document.getElementById('dps-styles-v8')) return;
+  // Remove stale CSS from previous versions
+  var _old = document.getElementById('dps-styles');
+  if (_old) _old.remove();
   const style = document.createElement('style');
-  style.id = 'dps-styles';
+  style.id = 'dps-styles-v8';
   style.textContent = `
 /* ══════════════════════════════════════════════════════
    DACUM Projects Sidebar — Modern 3-section layout

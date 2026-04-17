@@ -1,27 +1,25 @@
 // ============================================================
-// sw.js — DACUM Live Pro Service Worker  v7
+// sw.js — DACUM Live Pro Service Worker  v8
 // Deployed at: /DACUM-Live-Pro-V3.0/sw.js
 // Scope:       /DACUM-Live-Pro-V3.0/
 //
-// FIXES in v7
-//   • start_url no longer uses ?pwa=1 — cache key mismatch removed
-//   • ignoreSearch:true on all HTML/navigate matches
-//   • networkFirst stores HTML under canonical URL (no query string)
-//   • Aggressive skipWaiting in both install AND message handler
-//   • Activate notifies ALL clients to reload once, with version tag
+// v8 CHANGES (fixes PWA showing old sidebar):
+//   • JS + CSS files → network-first (was cache-first)
+//     Ensures new dacum_projects.js / dacum-mobile.js always load fresh.
+//   • HTML + manifest → network-first (unchanged)
+//   • Images → cache-first (safe, don't change often)
+//   • Cache version bumped → wipes v5/v6/v7 caches on activate
+//   • Activate sends SW_UPDATED to ALL clients including uncontrolled
 // ============================================================
 
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const CACHE_NAME    = 'dacum-live-pro-' + CACHE_VERSION;
 const BASE          = '/DACUM-Live-Pro-V3.0/';
 const OFFLINE_URL   = BASE + 'index.html';
 
-// HTML and manifest are always fetched fresh (network-first).
-// All other same-origin assets use cache-first + bg-revalidate.
-const ALWAYS_FRESH = [
-  /\/index\.html/,
-  /\/manifest\.json/,
-];
+// These resource types are served network-first (fresh code always wins).
+// Images/icons are still cache-first since they rarely change.
+const NETWORK_FIRST_EXT = /\.(html|js|css|json)(\?.*)?$/i;
 
 const PRECACHE_URLS = [
   BASE + 'index.html',
@@ -58,34 +56,22 @@ const PRECACHE_URLS = [
   BASE + 'icon-512.png',
 ];
 
-// ── Helpers ───────────────────────────────────────────────────
-
-/** Strip query string — used as canonical cache key for HTML. */
-function canonicalUrl(request) {
-  var u = new URL(request.url);
-  u.search = '';
-  return u.toString();
-}
-
-/** True when the request pathname matches an always-fresh rule. */
-function isAlwaysFresh(request) {
-  var pathname = new URL(request.url).pathname;
-  return ALWAYS_FRESH.some(function (re) { return re.test(pathname); });
-}
-
-// ── Install ───────────────────────────────────────────────────
+// ── Install: precache all assets, activate immediately ────────
 self.addEventListener('install', function (event) {
   console.log('[SW ' + CACHE_VERSION + '] Installing...');
-  // Skip waiting IMMEDIATELY — do not wait for old tabs to close.
   self.skipWaiting();
-
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
       return Promise.allSettled(
         PRECACHE_URLS.map(function (url) {
-          return cache.add(url).catch(function (err) {
-            console.warn('[SW] Precache skipped:', url, err.message);
-          });
+          // Fetch with no-cache to bypass any HTTP cache — gets fresh files
+          return fetch(url, { cache: 'no-store' })
+            .then(function (res) {
+              if (res && res.status === 200) return cache.put(url, res);
+            })
+            .catch(function (err) {
+              console.warn('[SW] Precache skipped:', url, err.message);
+            });
         })
       );
     }).then(function () {
@@ -94,29 +80,26 @@ self.addEventListener('install', function (event) {
   );
 });
 
-// ── Activate ──────────────────────────────────────────────────
+// ── Activate: claim clients, purge old caches, notify to reload
 self.addEventListener('activate', function (event) {
   console.log('[SW ' + CACHE_VERSION + '] Activating...');
   event.waitUntil(
-    // 1. Claim ALL open clients immediately (including installed PWA windows).
     self.clients.claim()
       .then(function () {
-        // 2. Delete every cache from previous versions.
         return caches.keys().then(function (keys) {
           return Promise.all(
             keys.filter(function (k) { return k !== CACHE_NAME; })
                 .map(function (k) {
-                  console.log('[SW] Removing old cache:', k);
+                  console.log('[SW] Deleting old cache:', k);
                   return caches.delete(k);
                 })
           );
         });
       })
       .then(function () {
-        // 3. Notify every open window (including standalone PWA) to reload.
-        console.log('[SW ' + CACHE_VERSION + '] Sending SW_UPDATED to all clients');
+        console.log('[SW ' + CACHE_VERSION + '] Notifying all clients');
         return self.clients.matchAll({
-          type:             'window',
+          type: 'window',
           includeUncontrolled: true
         }).then(function (clients) {
           clients.forEach(function (client) {
@@ -127,94 +110,96 @@ self.addEventListener('activate', function (event) {
   );
 });
 
-// ── Message handler ───────────────────────────────────────────
+// ── Message: handle SKIP_WAITING + GET_VERSION from page ────────
 self.addEventListener('message', function (event) {
   if (!event.data) return;
   if (event.data.type === 'SKIP_WAITING') {
-    console.log('[SW] SKIP_WAITING — activating now');
+    console.log('[SW] SKIP_WAITING received');
     self.skipWaiting();
+  }
+  // Version query — page checks if controller is up to date
+  if (event.data.type === 'GET_VERSION') {
+    var port = event.ports && event.ports[0];
+    var reply = { type: 'VERSION_REPLY', version: CACHE_VERSION };
+    if (port) {
+      port.postMessage(reply);
+    } else if (event.source) {
+      event.source.postMessage(reply);
+    }
   }
 });
 
-// ── Fetch ─────────────────────────────────────────────────────
+// ── Fetch: route each request to the right strategy ──────────
 self.addEventListener('fetch', function (event) {
   var req = event.request;
   if (req.method !== 'GET') return;
 
   var url = new URL(req.url);
 
-  // 1. External API (Railway etc.) → network only, never cache
+  // External API → network only
   if (url.hostname.includes('railway.app') || url.pathname.includes('/api/')) {
     event.respondWith(fetch(req));
     return;
   }
 
-  // 2. Cross-origin CDN → network-first (fonts, libraries)
+  // Cross-origin CDN → network-first with cache fallback
   if (url.hostname !== self.location.hostname) {
-    event.respondWith(networkFirst(req, false));
+    event.respondWith(networkFirst(req));
     return;
   }
 
-  // 3. HTML + manifest → network-first, canonical cache key
-  if (isAlwaysFresh(req)) {
-    event.respondWith(networkFirstHtml(req));
+  // Same-origin HTML, JS, CSS, JSON → network-first
+  // This ensures new sidebar code always loads, even after install
+  if (NETWORK_FIRST_EXT.test(url.pathname)) {
+    event.respondWith(networkFirst(req));
     return;
   }
 
-  // 4. Everything else (JS, CSS, images) → cache-first + bg refresh
+  // Images and other static assets → cache-first
   event.respondWith(cacheFirst(req));
 });
 
-// ── Strategy: network-first for HTML/manifest ─────────────────
-// Stores response under the canonical URL (no query string)
-// so ?pwa=1 and plain index.html share the same cache entry.
-async function networkFirstHtml(request) {
-  var canonical = canonicalUrl(request);
+// ── Network-first: try network, cache on success, fallback to cache
+async function networkFirst(request) {
+  var canonical = request.url.split('?')[0]; // strip query for consistent cache key
   try {
     var res = await fetch(canonical, { cache: 'no-cache' });
-    if (res && res.status === 200) {
-      var cache = await caches.open(CACHE_NAME);
-      // Store under canonical URL so any query variant finds it
-      await cache.put(canonical, res.clone());
-    }
-    return res;
-  } catch (_) {
-    // Offline fallback — search ignoring query string
-    var cached = await caches.match(canonical, { ignoreSearch: true });
-    if (!cached) cached = await caches.match(OFFLINE_URL, { ignoreSearch: true });
-    if (cached) return cached;
-    return new Response(
-      '<!doctype html><html><body style="font-family:sans-serif;text-align:center;padding:60px">' +
-      '<h2>📶 You are offline</h2><p>DACUM Live Pro will be available when you reconnect.</p>' +
-      '</body></html>',
-      { status: 503, headers: { 'Content-Type': 'text/html' } }
-    );
-  }
-}
-
-// ── Strategy: network-first for CDN ──────────────────────────
-async function networkFirst(request) {
-  try {
-    var res = await fetch(request);
     if (res && res.status === 200 && res.type !== 'opaque') {
       var cache = await caches.open(CACHE_NAME);
-      cache.put(request, res.clone());
+      cache.put(canonical, res.clone());
     }
     return res;
   } catch (_) {
-    return (await caches.match(request)) ||
-           new Response('Offline', { status: 503 });
+    // Offline: serve from cache (any query variant accepted)
+    var cached = await caches.match(canonical) ||
+                 await caches.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+    if (request.mode === 'navigate') {
+      return (await caches.match(OFFLINE_URL)) ||
+             new Response(
+               '<!doctype html><html><body style="font-family:sans-serif;text-align:center;padding:60px">' +
+               '<h2>\uD83D\uDCF6 You are offline</h2>' +
+               '<p>DACUM Live Pro will reload when reconnected.</p>' +
+               '</body></html>',
+               { status: 503, headers: { 'Content-Type': 'text/html' } }
+             );
+    }
+    return new Response('Offline', { status: 503 });
   }
 }
 
-// ── Strategy: cache-first + stale-while-revalidate ───────────
+// ── Cache-first: serve cache, refresh in background
 async function cacheFirst(request) {
   var cached = await caches.match(request);
   if (cached) {
-    bgRefresh(request); // update silently in background
+    // Background refresh
+    fetch(request).then(function (res) {
+      if (res && res.status === 200 && res.type !== 'opaque') {
+        caches.open(CACHE_NAME).then(function (c) { c.put(request, res); });
+      }
+    }).catch(function () {});
     return cached;
   }
-  // Not in cache — fetch, cache, return
   try {
     var res = await fetch(request);
     if (res && res.status === 200 && res.type !== 'opaque') {
@@ -225,13 +210,4 @@ async function cacheFirst(request) {
   } catch (_) {
     return new Response('Offline', { status: 503 });
   }
-}
-
-// Background refresh (fire-and-forget)
-function bgRefresh(request) {
-  fetch(request).then(function (res) {
-    if (res && res.status === 200 && res.type !== 'opaque') {
-      caches.open(CACHE_NAME).then(function (cache) { cache.put(request, res); });
-    }
-  }).catch(function () {});
 }

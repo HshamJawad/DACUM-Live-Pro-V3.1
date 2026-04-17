@@ -9,6 +9,7 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     padding: 20px;
+    padding-top: 60px; /* toolbar height — always applied regardless of cache state */
 }
 
 .container {

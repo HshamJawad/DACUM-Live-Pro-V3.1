@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>DACUM Live Pro</title>
 
     <!-- PWA -->
@@ -14,115 +17,110 @@
     <meta name="apple-mobile-web-app-title" content="DACUM Pro">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <!-- Service Worker -->
+    <!-- Service Worker v8 -->
     <script>
     (function () {
       if (!('serviceWorker' in navigator)) return;
 
-      // ── Reload guard: keyed by SW version so each new deploy
-      //    always triggers exactly one reload, never loops.
-      var _reloadKeyPrefix = 'dacum_sw_reloaded_';
-      var _minInterval     = 20000; // ms safety gap
+      // Must match CACHE_VERSION in sw.js
+      var EXPECTED_SW = 'v8';
 
-      function _canReload(version) {
+      // Per-version reload guard — prevents infinite refresh loops
+      var _reloadPrefix = 'dacum_sw_v_';
+      var _minInterval  = 20000;
+
+      function _canReload(v) {
         try {
-          var key  = _reloadKeyPrefix + version;
-          var last = parseInt(sessionStorage.getItem(key) || '0', 10);
+          var last = parseInt(sessionStorage.getItem(_reloadPrefix + v) || '0', 10);
           return (Date.now() - last) > _minInterval;
         } catch (e) { return true; }
       }
-      function _markReload(version) {
-        try { sessionStorage.setItem(_reloadKeyPrefix + version, String(Date.now())); } catch (e) {}
+      function _markReload(v) {
+        try { sessionStorage.setItem(_reloadPrefix + v, String(Date.now())); } catch (e) {}
       }
 
-      // ── Update toast ─────────────────────────────────────────
-      function _showUpdateToast(version) {
-        if (document.getElementById('dacumUpdateToast')) return;
+      // Update toast UI
+      function _showToast() {
+        if (document.getElementById('_dacumSwToast')) return;
         var s = document.createElement('style');
-        s.textContent =
-          '@keyframes _dpwain{from{opacity:0;transform:translateX(-50%) translateY(20px)}' +
-          'to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+        s.textContent = '@keyframes _swtin{from{opacity:0;transform:translateX(-50%) translateY(18px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
         document.head.appendChild(s);
-
         var t = document.createElement('div');
-        t.id = 'dacumUpdateToast';
+        t.id = '_dacumSwToast';
         t.style.cssText =
-          'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);' +
+          'position:fixed;bottom:18px;left:50%;transform:translateX(-50%);' +
           'background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;' +
-          'padding:11px 20px;border-radius:12px;font-size:0.85em;font-weight:600;' +
-          'font-family:inherit;box-shadow:0 6px 24px rgba(102,126,234,0.5);' +
-          'z-index:2147483647;display:flex;align-items:center;gap:9px;' +
-          'white-space:nowrap;animation:_dpwain 0.35s cubic-bezier(.16,1,.3,1);';
-        t.innerHTML =
-          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
-          ' stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
-          '<polyline points="23 4 23 10 17 10"/>' +
-          '<path d="M20.49 15a9 9 0 1 1-.07-8.4"/></svg>' +
-          '<span>Updating to latest version…</span>';
+          'padding:10px 20px;border-radius:12px;font-size:0.84em;font-weight:600;' +
+          'font-family:inherit;box-shadow:0 4px 20px rgba(102,126,234,0.55);' +
+          'z-index:2147483647;display:flex;align-items:center;gap:8px;' +
+          'white-space:nowrap;animation:_swtin 0.3s cubic-bezier(.16,1,.3,1);';
+        t.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.07-8.4"/></svg><span>Updating…</span>';
         document.body.appendChild(t);
-        console.log('[PWA] Update toast — v' + version);
       }
 
-      // ── Perform reload (safe, one-shot) ──────────────────────
-      function _doReload(version) {
-        if (!_canReload(version)) {
-          console.log('[PWA] Reload suppressed for v' + version + ' (already reloaded recently)');
-          return;
-        }
-        _markReload(version);
-        _showUpdateToast(version);
-        setTimeout(function () { window.location.reload(); }, 1600);
+      // One-shot reload per SW version
+      function _reload(v) {
+        if (!_canReload(v)) { console.log('[PWA] reload suppressed', v); return; }
+        _markReload(v);
+        _showToast();
+        setTimeout(function () { window.location.reload(true); }, 1500);
       }
 
-      // ── Listen for SW_UPDATED message from sw.js ─────────────
+      // SW sends SW_UPDATED after activate
       navigator.serviceWorker.addEventListener('message', function (e) {
-        if (!e.data || e.data.type !== 'SW_UPDATED') return;
-        console.log('[PWA] SW_UPDATED received — version:', e.data.version);
-        _doReload(e.data.version);
+        if (!e.data) return;
+        if (e.data.type === 'SW_UPDATED') { console.log('[PWA] SW_UPDATED', e.data.version); _reload(e.data.version); }
+        // Version query response
+        if (e.data.type === 'VERSION_REPLY' && e.data.version !== EXPECTED_SW) {
+          console.log('[PWA] Stale SW detected (' + e.data.version + '), triggering update');
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.getRegistration().then(function (reg) { if (reg) reg.update(); });
+          }
+        }
       });
 
-      // ── Fallback: controllerchange (older browser path) ──────
-      var _reloading = false;
+      // controllerchange fallback (fires when new SW takes control)
+      var _ctrl = false;
       navigator.serviceWorker.addEventListener('controllerchange', function () {
-        if (_reloading) return;
-        _reloading = true;
-        // Use a generic version key for the controllerchange path
-        _doReload('ctrl');
+        if (_ctrl) return; _ctrl = true;
+        _reload('ctrl-' + EXPECTED_SW);
       });
 
-      // ── Register SW ──────────────────────────────────────────
+      // Register
       window.addEventListener('load', function () {
-        navigator.serviceWorker
-          .register('/DACUM-Live-Pro-V3.0/sw.js', { scope: '/DACUM-Live-Pro-V3.0/' })
-          .then(function (reg) {
-            console.log('[PWA] SW registered — scope:', reg.scope);
+        navigator.serviceWorker.register(
+          '/DACUM-Live-Pro-V3.0/sw.js',
+          { scope: '/DACUM-Live-Pro-V3.0/', updateViaCache: 'none' }
+        ).then(function (reg) {
+          console.log('[PWA] Registered', reg.scope);
 
-            // Check for updates every 60 s while the app is open
-            setInterval(function () { reg.update(); }, 60000);
+          // Immediate update check + every 30 s
+          reg.update();
+          setInterval(function () { reg.update(); }, 30000);
 
-            // If a new SW is already waiting (e.g. page was open during deploy)
-            if (reg.waiting) {
-              console.log('[PWA] SW already waiting — sending SKIP_WAITING');
-              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-            }
+          // Handle already-waiting SW
+          if (reg.waiting) {
+            console.log('[PWA] SW waiting — SKIP_WAITING');
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
 
-            // Watch for new SW installations
-            reg.addEventListener('updatefound', function () {
-              var newWorker = reg.installing;
-              if (!newWorker) return;
-              console.log('[PWA] New SW found — state:', newWorker.state);
-              newWorker.addEventListener('statechange', function () {
-                console.log('[PWA] SW statechange:', newWorker.state);
-                // When installed: nudge it to skip waiting immediately
-                if (newWorker.state === 'installed') {
-                  newWorker.postMessage({ type: 'SKIP_WAITING' });
-                }
-              });
+          reg.addEventListener('updatefound', function () {
+            var nw = reg.installing;
+            if (!nw) return;
+            nw.addEventListener('statechange', function () {
+              if (nw.state === 'installed') {
+                console.log('[PWA] SW installed — SKIP_WAITING');
+                nw.postMessage({ type: 'SKIP_WAITING' });
+              }
             });
-          })
-          .catch(function (err) {
-            console.warn('[PWA] SW registration failed:', err);
           });
+
+          // Ask running SW its version — if stale, force update
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ type: 'GET_VERSION' });
+          }
+
+        }).catch(function (err) { console.warn('[PWA] SW failed:', err); });
       });
     })();
     </script>
