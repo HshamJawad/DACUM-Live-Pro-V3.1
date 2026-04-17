@@ -18,6 +18,7 @@ import { initProjectsSidebar, saveCurrentProject,
          createProject, getActiveProjectId } from './dacum_projects.js';
 import { startAutoSave, checkCrashRecovery } from './autosave.js';
 import { clearAiGeneratedFlag } from './refine.js';
+import { initDragDrop }        from './drag_drop.js';
 
 // Expose switchTab globally (called from HTML onclick and live workshop guards)
 window.switchTab = switchTab;
@@ -66,6 +67,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Start auto-save observer (debounced, 800 ms)
   startAutoSave();
+
+  // Initialize drag & drop for task cards (Card View only)
+  initDragDrop();
 
   // Check for unsaved work from a previous crashed session
   checkCrashRecovery();

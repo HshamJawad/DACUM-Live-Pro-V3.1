@@ -147,6 +147,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
     <link rel="stylesheet" href="dacum-styles.css">
     <link rel="stylesheet" href="dacum-responsive.css">
     <link rel="stylesheet" href="dacum-fixes.css">
@@ -199,6 +200,15 @@
         from { opacity:0; transform:translateY(-6px); }
         to   { opacity:1; transform:translateY(0); }
       }
+
+      /* ── Drag & Drop (Card View only) ─────────────────────── */
+      .drag-ghost    { opacity: 0.35; outline: 2px dashed #667eea; background: #eef2ff !important; }
+      .drag-chosen   { transform: scale(1.03); box-shadow: 0 8px 22px rgba(102,126,234,0.25); z-index: 5; }
+      .drag-dragging { opacity: 0.85; cursor: grabbing !important; }
+      .card-view-mode .dcv-task-card            { cursor: grab; transition: transform 0.15s, box-shadow 0.15s; }
+      .card-view-mode .dcv-task-card:active     { cursor: grabbing; }
+      .card-view-mode .dcv-task-card .dcv-task-input { cursor: text; }
+      .card-view-mode .dcv-task-card .dcv-close-btn  { cursor: pointer; }
     </style>
 </head>
 <body>
