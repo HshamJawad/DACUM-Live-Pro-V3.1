@@ -1,20 +1,13 @@
 // ============================================================
 // sw.js — DACUM Live Pro Service Worker  v8
-// Deployed at: /DACUM-Live-Pro-V3.0/sw.js
-// Scope:       /DACUM-Live-Pro-V3.0/
-//
-// v8 CHANGES (fixes PWA showing old sidebar):
-//   • JS + CSS files → network-first (was cache-first)
-//     Ensures new dacum_projects.js / dacum-mobile.js always load fresh.
-//   • HTML + manifest → network-first (unchanged)
-//   • Images → cache-first (safe, don't change often)
-//   • Cache version bumped → wipes v5/v6/v7 caches on activate
-//   • Activate sends SW_UPDATED to ALL clients including uncontrolled
+// Path-agnostic: BASE is derived dynamically from scope.
+// Works regardless of repository name (V3.0, V3.1, etc.)
 // ============================================================
 
 const CACHE_VERSION = 'v8';
 const CACHE_NAME    = 'dacum-live-pro-' + CACHE_VERSION;
-const BASE          = '/DACUM-Live-Pro-V3.0/';
+// Derive BASE from the SW scope so this file works in any repo path
+const BASE          = self.registration ? self.registration.scope : '/';
 const OFFLINE_URL   = BASE + 'index.html';
 
 // These resource types are served network-first (fresh code always wins).

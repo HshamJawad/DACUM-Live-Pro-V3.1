@@ -96,8 +96,8 @@
       // Register
       window.addEventListener('load', function () {
         navigator.serviceWorker.register(
-          '/DACUM-Live-Pro-V3.0/sw.js',
-          { scope: '/DACUM-Live-Pro-V3.0/', updateViaCache: 'none' }
+          './sw.js',
+          { updateViaCache: 'none' }
         ).then(function (reg) {
           console.log('[PWA] Registered', reg.scope);
 
@@ -1107,18 +1107,18 @@
                     <p class="hc-card-desc">Access the full documentation for DACUM Live Pro — includes detailed instructions, screenshots, and best practices.</p>
 
                     <div class="hc-btn-row">
-                        <a href="https://hshamjawad.github.io/DACUM-Live-Pro-V3.0/DACUM_Live_Pro_User_Guide.html"
+                        <a href="https://hshamjawad.github.io/DACUM-Live-Pro-V3.1/DACUM_Live_Pro_User_Guide.html"
                            target="_blank" rel="noopener" class="hc-btn hc-btn-primary">
                             📖 Open User Guide
                         </a>
-                        <a href="https://hshamjawad.github.io/DACUM-Live-Pro-V3.0/DACUM_Live_Pro_User_Guide.html"
+                        <a href="https://hshamjawad.github.io/DACUM-Live-Pro-V3.1/DACUM_Live_Pro_User_Guide.html"
                            target="_blank" rel="noopener" class="hc-btn hc-btn-secondary">
                             🔗 View in New Tab
                         </a>
                     </div>
 
                     <div class="hc-qr-wrap">
-                        <img src="https://hshamjawad.github.io/DACUM-Live-Pro-V3.0/qr-code_DACUM_Live_Pro_User_Guide.png"
+                        <img src="https://hshamjawad.github.io/DACUM-Live-Pro-V3.1/qr-code_DACUM_Live_Pro_User_Guide.png"
                              alt="QR code — User Guide"
                              class="hc-qr-img"
                              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
