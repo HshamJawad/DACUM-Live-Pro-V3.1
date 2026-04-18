@@ -7,6 +7,16 @@
 //   • Always pushes to history FIRST → fully undo-able with Ctrl+Z.
 //   • Never silently discards user edits made after generation.
 //   • Operates on appState.dutiesData directly, then re-renders once.
+//
+// Post-refine UX (added):
+//   • Persistent summary card appended inside #refineResultsSection
+//     that stays visible until user dismisses, re-runs refine, or
+//     clears/loads a project.
+//   • Temporary green highlight on any duty/task whose text was
+//     mutated in-place (2500 ms), so the user can see exactly what
+//     the refinement touched.  Deletions (duplicates/fragments) can
+//     only be reported via the summary card since they're gone from
+//     the DOM.
 // ============================================================
 
 import { appState }                          from './state.js';
@@ -28,6 +38,7 @@ export function markAiGenerated() {
 export function clearAiGeneratedFlag() {
   _aiGenerated = false;
   _hideRefineSection();
+  _removeSummaryCard();     // also clear any stale summary from previous run
 }
 
 // ── Visibility helpers ────────────────────────────────────────
@@ -61,6 +72,9 @@ export function refineResults() {
 
   // Push BEFORE mutation → undo restores this exact snapshot
   pushHistoryState();
+
+  // Capture text snapshot BEFORE mutation — used to compute highlights
+  const beforeSnap = _captureDiffSnapshot();
 
   const stats = {
     trimmed:    0,
@@ -103,6 +117,16 @@ export function refineResults() {
   });
 
   renderDutiesFromState();
+
+  // Diff the after-state against the captured snapshot and apply
+  // a temporary highlight to every changed element still on screen
+  const changed = _computeChanges(beforeSnap);
+  _applyRefinedHighlights(changed);
+
+  // Build the persistent summary card (replaces any previous one)
+  _renderSummaryCard(stats, changed);
+
+  // Legacy toast — kept for continuity; the card is the primary signal
   _reportStats(stats);
 }
 
@@ -182,6 +206,131 @@ function _stripResultClauses(text) {
     result = result.replace(pattern, '');
   }
   return result.trim();
+}
+
+// ── Diff snapshot + highlight plumbing ────────────────────────
+
+function _captureDiffSnapshot() {
+  const snap = { duties: {}, tasks: {} };
+  (appState.dutiesData || []).forEach(duty => {
+    snap.duties[duty.id] = duty.title || '';
+    (duty.tasks || []).forEach(task => {
+      snap.tasks[task.inputId] = task.text || '';
+    });
+  });
+  return snap;
+}
+
+function _computeChanges(beforeSnap) {
+  const changedDuties = [];
+  const changedTasks  = [];
+  (appState.dutiesData || []).forEach(duty => {
+    const before = beforeSnap.duties[duty.id];
+    if (before !== undefined && before !== (duty.title || '')) {
+      changedDuties.push(duty.id);
+    }
+    (duty.tasks || []).forEach(task => {
+      const b = beforeSnap.tasks[task.inputId];
+      if (b !== undefined && b !== (task.text || '')) {
+        changedTasks.push(task.inputId);
+      }
+    });
+  });
+  return { changedDuties, changedTasks };
+}
+
+function _applyRefinedHighlights({ changedDuties, changedTasks }) {
+  const HL       = 'refined-highlight';
+  const DURATION = 2500;
+  const esc      = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape : (s => s);
+
+  changedTasks.forEach(inputId => {
+    const el = document.querySelector(`[data-task-id="${esc(inputId)}"]`);
+    if (!el) return;
+    const target = el.closest('.dcv-task-card') || el.closest('.task-item') || el;
+    target.classList.add(HL);
+    setTimeout(() => {
+      const still   = document.querySelector(`[data-task-id="${esc(inputId)}"]`);
+      const stillTg = still ? (still.closest('.dcv-task-card') || still.closest('.task-item') || still) : null;
+      if (stillTg) stillTg.classList.remove(HL);
+    }, DURATION);
+  });
+
+  changedDuties.forEach(dutyId => {
+    const el = document.querySelector(`[data-duty-id="${esc(dutyId)}"]`);
+    if (!el) return;
+    const target = el.closest('.dcv-duty-card') || el;
+    target.classList.add(HL);
+    setTimeout(() => {
+      const still   = document.querySelector(`[data-duty-id="${esc(dutyId)}"]`);
+      const stillTg = still ? (still.closest('.dcv-duty-card') || still) : null;
+      if (stillTg) stillTg.classList.remove(HL);
+    }, DURATION);
+  });
+}
+
+// ── Persistent summary card ───────────────────────────────────
+
+function _removeSummaryCard() {
+  const existing = document.getElementById('refineSummaryCard');
+  if (existing) existing.remove();
+}
+
+function _renderSummaryCard(stats, changed) {
+  const parent = document.getElementById('refineResultsSection');
+  if (!parent) return;
+
+  _removeSummaryCard();     // always replace, never stack
+
+  const total = stats.trimmed + stats.periods + stats.clauses +
+                stats.normalized + stats.duplicates + stats.fragments;
+  const highlightCount = changed.changedDuties.length + changed.changedTasks.length;
+
+  const card = document.createElement('div');
+  card.id = 'refineSummaryCard';
+  card.className = 'refine-summary-card';
+
+  if (total === 0) {
+    card.innerHTML = `
+      <button class="refine-summary-close" title="Dismiss" aria-label="Dismiss">×</button>
+      <div class="refine-summary-icon">✓</div>
+      <div class="refine-summary-title">No refinement needed</div>
+      <div class="refine-summary-body">
+        AI output already follows DACUM conventions — no trailing periods,
+        no result clauses, no duplicate tasks, all statements well-formed.
+      </div>
+    `;
+  } else {
+    const bullets = [];
+    if (stats.normalized) bullets.push(`${stats.normalized} capitalisation fix${stats.normalized > 1 ? 'es' : ''}`);
+    if (stats.periods)    bullets.push(`${stats.periods} trailing period${stats.periods > 1 ? 's' : ''} removed`);
+    if (stats.clauses)    bullets.push(`${stats.clauses} result clause${stats.clauses > 1 ? 's' : ''} stripped`);
+    if (stats.duplicates) bullets.push(`${stats.duplicates} duplicate task${stats.duplicates > 1 ? 's' : ''} removed`);
+    if (stats.fragments)  bullets.push(`${stats.fragments} fragment task${stats.fragments > 1 ? 's' : ''} removed`);
+    if (stats.trimmed)    bullets.push(`${stats.trimmed} whitespace fix${stats.trimmed > 1 ? 'es' : ''}`);
+
+    const listHtml = bullets.map(b => `<li>${b}</li>`).join('');
+    const hintHtml = highlightCount > 0
+      ? `<div class="refine-summary-hint">💡 ${highlightCount} item${highlightCount > 1 ? 's' : ''} highlighted below (fades in ~2.5s)</div>`
+      : '';
+
+    card.innerHTML = `
+      <button class="refine-summary-close" title="Dismiss" aria-label="Dismiss">×</button>
+      <div class="refine-summary-icon">✨</div>
+      <div class="refine-summary-title">Refinement applied</div>
+      <ul class="refine-summary-list">${listHtml}</ul>
+      ${hintHtml}
+      <div class="refine-summary-undo">
+        Press <kbd>Ctrl</kbd>+<kbd>Z</kbd> to undo all changes.
+      </div>
+    `;
+  }
+
+  // Wire the × button — self-contained, no events.js change needed
+  const closeBtn = card.querySelector('.refine-summary-close');
+  if (closeBtn) closeBtn.addEventListener('click', () => card.remove());
+
+  parent.appendChild(card);
 }
 
 // ── Status reporter ───────────────────────────────────────────

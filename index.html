@@ -215,6 +215,59 @@
         background-color: rgba(102, 126, 234, 0.15) !important;
         border: 1px solid #667eea !important;
       }
+
+      /* ── Refine Results: persistent summary card ─────────── */
+      #refineSummaryCard {
+        position: relative;
+        margin-top: 10px;
+        padding: 14px 42px 14px 18px;
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        border: 1.5px solid #10b981;
+        border-radius: 10px;
+        color: #065f46;
+        font-size: 0.88em;
+        line-height: 1.55;
+        animation: refine-fade-in 0.35s ease;
+      }
+      .refine-summary-close {
+        position: absolute;
+        top: 6px; right: 10px;
+        background: transparent;
+        border: none;
+        font-size: 1.3em;
+        color: #065f46;
+        cursor: pointer;
+        opacity: 0.55;
+        line-height: 1;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: opacity 0.15s, background 0.15s;
+      }
+      .refine-summary-close:hover { opacity: 1; background: rgba(16,185,129,0.18); }
+      .refine-summary-icon  { font-size: 1.25em; margin-bottom: 2px; }
+      .refine-summary-title { font-weight: 700; margin-bottom: 6px; font-size: 1em; color: #064e3b; }
+      .refine-summary-body  { color: #065f46; }
+      .refine-summary-list  { margin: 4px 0 8px 22px; padding: 0; line-height: 1.75; color: #047857; }
+      .refine-summary-list li { margin: 0; }
+      .refine-summary-hint  { margin-top: 8px; color: #065f46; font-size: 0.92em; }
+      .refine-summary-undo  { margin-top: 8px; font-size: 0.85em; color: #047857; }
+      .refine-summary-undo kbd {
+        background: #ffffff;
+        border: 1px solid #a7f3d0;
+        border-radius: 4px;
+        padding: 1px 6px;
+        font-family: inherit;
+        font-size: 0.88em;
+        color: #065f46;
+        margin: 0 1px;
+      }
+
+      /* Post-refine flash on changed duties/tasks (2.5s) */
+      .refined-highlight {
+        background-color: rgba(16, 185, 129, 0.15) !important;
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
+      }
     </style>
 </head>
 <body>
