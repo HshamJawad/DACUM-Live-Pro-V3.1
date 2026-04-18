@@ -88,7 +88,9 @@ export function updateTrainingLoadMethod() {
 
 export function loadDutiesForVerification() {
   const container   = document.getElementById('verificationAccordionContainer');
-  const dutyInputs  = document.querySelectorAll('[data-duty-id]');
+  // Restrict to real text fields only — buttons in Card View also carry
+  // data-duty-id (for remove-duty actions) and would throw on .value.trim()
+  const dutyInputs  = document.querySelectorAll('input[data-duty-id], textarea[data-duty-id]');
 
   if (dutyInputs.length === 0) {
     container.innerHTML = `
@@ -110,7 +112,12 @@ export function loadDutiesForVerification() {
     totalDuties++;
 
     const tasks = [];
-    document.querySelectorAll(`[data-task-id^="${dutyId}_"]`).forEach(taskInput => {
+    // Only query real input/textarea fields — Card View also renders
+    // buttons with data-task-div-id / data-action attributes, plus the
+    // remove button on each task card which must not be treated as data
+    document.querySelectorAll(
+      `input[data-task-id^="${dutyId}_"], textarea[data-task-id^="${dutyId}_"]`
+    ).forEach(taskInput => {
       const taskText = taskInput.value.trim();
       if (taskText) {
         const taskId = taskInput.getAttribute('data-task-id');

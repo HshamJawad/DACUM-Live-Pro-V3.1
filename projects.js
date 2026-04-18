@@ -318,7 +318,10 @@ export async function generateAIDacum() {
     return;
   }
 
-  const existingDuties = document.querySelectorAll('[data-duty-id]');
+  // Restrict to real text fields — buttons in Card View also carry
+  // data-duty-id for their remove-duty action, which would incorrectly
+  // show up as "existing content" in this guard
+  const existingDuties = document.querySelectorAll('input[data-duty-id], textarea[data-duty-id]');
   let hasContent = false;
   existingDuties.forEach(inp => { if (inp.value.trim()) hasContent = true; });
 
