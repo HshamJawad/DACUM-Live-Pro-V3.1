@@ -171,12 +171,12 @@ export async function exportTaskVerificationWord() {
                         const dutyId = taskParts[0];
                         
                         if (!dutyText) {
-                            const dutyInput = document.querySelector(`[data-duty-id="${dutyId}"]`);
+                            const dutyInput = document.querySelector(`input[data-duty-id="${dutyId}"], textarea[data-duty-id="${dutyId}"]`);
                             dutyText = dutyInput ? dutyInput.value.trim() : 'Unassigned';
                         }
                         
                         if (!taskText) {
-                            const taskInput = document.querySelector(`[data-task-id="${taskKey}"]`);
+                            const taskInput = document.querySelector(`input[data-task-id="${taskKey}"], textarea[data-task-id="${taskKey}"]`);
                             taskText = taskInput ? taskInput.value.trim() : 'Unassigned';
                         }
                     }
@@ -274,7 +274,7 @@ export async function exportTaskVerificationWord() {
                         let dutyTitle = result.dutyTitle;
                         
                         if (!dutyTitle) {
-                            const dutyInput = document.querySelector(`[data-duty-id="${dutyId}"]`);
+                            const dutyInput = document.querySelector(`input[data-duty-id="${dutyId}"], textarea[data-duty-id="${dutyId}"]`);
                             dutyTitle = dutyInput ? dutyInput.value.trim() : 'Unassigned';
                         }
                         
@@ -737,14 +737,14 @@ export async function exportToWord() {
                 }));
 
                 // Collect duties and tasks
-                const dutyInputs = document.querySelectorAll('[data-duty-id]');
+                const dutyInputs = document.querySelectorAll('input[data-duty-id], textarea[data-duty-id]');
                 const duties = [];
                 
                 dutyInputs.forEach(dutyInput => {
                     const dutyText = dutyInput.value.trim();
                     if (dutyText) {
                         const dutyId = dutyInput.getAttribute('data-duty-id');
-                        const taskInputs = document.querySelectorAll(`[data-task-id^="${dutyId}_"]`);
+                        const taskInputs = document.querySelectorAll(`input[data-task-id^="${dutyId}_"], textarea[data-task-id^="${dutyId}_"]`);
                         const tasks = [];
                         
                         taskInputs.forEach(taskInput => {
@@ -1477,12 +1477,12 @@ export async function exportToWord() {
                                 const dutyId = taskParts[0];
                                 
                                 if (!dutyText) {
-                                    const dutyInput = document.querySelector(`[data-duty-id="${dutyId}"]`);
+                                    const dutyInput = document.querySelector(`input[data-duty-id="${dutyId}"], textarea[data-duty-id="${dutyId}"]`);
                                     dutyText = dutyInput ? dutyInput.value.trim() : 'Unassigned';
                                 }
                                 
                                 if (!taskText) {
-                                    const taskInput = document.querySelector(`[data-task-id="${taskKey}"]`);
+                                    const taskInput = document.querySelector(`input[data-task-id="${taskKey}"], textarea[data-task-id="${taskKey}"]`);
                                     taskText = taskInput ? taskInput.value.trim() : 'Unassigned';
                                 }
                             }
@@ -1580,7 +1580,7 @@ export async function exportToWord() {
                                 let dutyTitle = result.dutyTitle;
                                 
                                 if (!dutyTitle) {
-                                    const dutyInput = document.querySelector(`[data-duty-id="${dutyId}"]`);
+                                    const dutyInput = document.querySelector(`input[data-duty-id="${dutyId}"], textarea[data-duty-id="${dutyId}"]`);
                                     dutyTitle = dutyInput ? dutyInput.value.trim() : 'Unassigned';
                                 }
                                 
@@ -2243,12 +2243,12 @@ export function exportTaskVerificationPDF() {
                 const dutyId = taskParts[0];
                 
                 if (!dutyText) {
-                    const dutyInput = document.querySelector(`[data-duty-id="${dutyId}"]`);
+                    const dutyInput = document.querySelector(`input[data-duty-id="${dutyId}"], textarea[data-duty-id="${dutyId}"]`);
                     dutyText = dutyInput ? dutyInput.value.trim() : 'Unassigned';
                 }
                 
                 if (!taskText) {
-                    const taskInput = document.querySelector(`[data-task-id="${taskKey}"]`);
+                    const taskInput = document.querySelector(`input[data-task-id="${taskKey}"], textarea[data-task-id="${taskKey}"]`);
                     taskText = taskInput ? taskInput.value.trim() : 'Unassigned';
                 }
             }
@@ -2336,7 +2336,7 @@ export function exportTaskVerificationPDF() {
                 let dutyTitle = result.dutyTitle;
                 
                 if (!dutyTitle) {
-                    const dutyInput = document.querySelector(`[data-duty-id="${dutyId}"]`);
+                    const dutyInput = document.querySelector(`input[data-duty-id="${dutyId}"], textarea[data-duty-id="${dutyId}"]`);
                     dutyTitle = dutyInput ? dutyInput.value.trim() : 'Unassigned';
                 }
                 
@@ -2701,14 +2701,14 @@ export function exportToPDF() {
         yPos = margin + 5;
         
         // Collect duties and tasks
-        const dutyInputs = document.querySelectorAll('[data-duty-id]');
+        const dutyInputs = document.querySelectorAll('input[data-duty-id], textarea[data-duty-id]');
         const duties = [];
         
         dutyInputs.forEach(dutyInput => {
             const dutyText = dutyInput.value.trim();
             if (dutyText) {
                 const dutyId = dutyInput.getAttribute('data-duty-id');
-                const taskInputs = document.querySelectorAll(`[data-task-id^="${dutyId}_"]`);
+                const taskInputs = document.querySelectorAll(`input[data-task-id^="${dutyId}_"], textarea[data-task-id^="${dutyId}_"]`);
                 const tasks = [];
                 
                 taskInputs.forEach(taskInput => {
@@ -3210,12 +3210,12 @@ export function exportToPDF() {
                         const dutyId = taskParts[0];
                         
                         if (!dutyText) {
-                            const dutyInput = document.querySelector(`[data-duty-id="${dutyId}"]`);
+                            const dutyInput = document.querySelector(`input[data-duty-id="${dutyId}"], textarea[data-duty-id="${dutyId}"]`);
                             dutyText = dutyInput ? dutyInput.value.trim() : 'Unassigned';
                         }
                         
                         if (!taskText) {
-                            const taskInput = document.querySelector(`[data-task-id="${taskKey}"]`);
+                            const taskInput = document.querySelector(`input[data-task-id="${taskKey}"], textarea[data-task-id="${taskKey}"]`);
                             taskText = taskInput ? taskInput.value.trim() : 'Unassigned';
                         }
                     }
@@ -3305,7 +3305,7 @@ export function exportToPDF() {
                         let dutyTitle = result.dutyTitle;
                         
                         if (!dutyTitle) {
-                            const dutyInput = document.querySelector(`[data-duty-id="${dutyId}"]`);
+                            const dutyInput = document.querySelector(`input[data-duty-id="${dutyId}"], textarea[data-duty-id="${dutyId}"]`);
                             dutyTitle = dutyInput ? dutyInput.value.trim() : 'Unassigned';
                         }
                         
